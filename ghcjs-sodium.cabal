@@ -1,0 +1,34 @@
+name:                ghcjs-sodium
+version:             0.1.0
+synopsis:            Reactive JavaScript DOM
+license:             MIT
+license-file:        LICENSE
+author:              Kyle Raftogianis <kylerafto@gmail.com>
+maintainer:          Kyle Raftogianis <kylerafto@gmail.com>
+stability:           experimental
+homepage:            http://github.com/ghcjs/ghcjs-sodium
+bug-reports:         http://github.com/ghcjs/ghcjs-sodium
+copyright:           Copyright (c) 2014 Kyle Raftogianis
+category:            FRP, Web
+build-type:          Simple
+cabal-version:       >= 1.8
+
+extra-source-files:
+  .gitignore
+  README.md
+
+source-repository head
+  type: git
+  location: git://github.com/ghcjs/ghcjs-sodium
+
+library
+  hs-source-dirs: src
+  ghc-options: -Wall
+
+  build-depends:
+    base,
+    ghcjs-base,
+    sodium
+
+  exposed-modules:
+  
