@@ -26,9 +26,17 @@ library
   ghc-options: -Wall
 
   build-depends:
+    aeson,
     base,
+    dlist,
     ghcjs-base,
-    sodium
+    ghcjs-dom,
+    hashable,
+    lens,
+    sodium,
+    text,
+    unordered-containers
 
   exposed-modules:
-  
+    FRP.GHCJS.Diff
+    FRP.GHCJS.Element
