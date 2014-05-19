@@ -16,17 +16,13 @@ module FRP.GHCJS.Diff
     , equal
     , equalOn
       -- * Diffs
-    , Diff(..)
     , Edit(..)
-    , recover
+    , diff
     ) where
 
 import           Control.Applicative
 import           Control.Lens
 import           Data.Foldable
-import           Data.Hashable
-import           Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
 
 -- | Two values, representing the old and new versions of data type. This is
 -- also the diagonal functor in @Hask@, the category of Haskell types.
@@ -63,13 +59,6 @@ equal = equalOn id
 equalOn :: Eq a => Getting a s a -> Fold (Delta s) (Delta s)
 equalOn l = filtered $ \(Delta x y) -> view l x == view l y
 
--- | Types that can be deconstructed into edit scripts.
-class Diff a b | a -> b where
-    -- | Convert a pair of values into an edit script that tells corresponding
-    -- differences between old and new versions. It is possible to recover
-    -- both values from the resulting script.
-    diff :: Iso' (Delta a) [Edit b]
-
 -- | A single edit in an edit script.
 data Edit a
     -- | An item present in the new version, but not the old.
@@ -80,32 +69,20 @@ data Edit a
     | Both (Delta a)
     deriving (Eq, Read, Show, Functor, Foldable, Traversable)
 
--- | Recover the two values from an edit script using a fold.
-recover :: (b -> a -> a) -> a -> [Edit b] -> Delta a
-recover f z = Prelude.foldr go (Delta z z)
+-- | Convert a pair of lists into an edit script that tells corresponding
+-- differences between old and new versions. It is possible to recover
+-- both values from the resulting script.
+diff :: Iso' (Delta [a]) [Edit a]
+diff = iso diff' patch
   where
-    go (Insert b) (Delta x y) = Delta x (f b y)
-    go (Delete a) (Delta x y) = Delta (f a x) y
-    go (Both ab)  d           = f <$> ab <*> d
-
-instance Diff [a] a where
-    diff = iso diff' (recover (:) [])
+    diff' (Delta a b) = go a b
       where
-        diff' (Delta a b) = go a b
-          where
-            go []     ys     = Insert <$> ys
-            go xs     []     = Delete <$> xs
-            go (x:xs) (y:ys) = Both (Delta x y) : go xs ys
+        go []     ys     = Insert <$> ys
+        go xs     []     = Delete <$> xs
+        go (x:xs) (y:ys) = Both (Delta x y) : go xs ys
 
-instance (Eq k, Hashable k) => Diff (HashMap k v) (k, v) where
-    diff = iso diff' recover'
+    patch = Prelude.foldr go (Delta [] [])
       where
-        diff' (Delta m1 m2) =
-            values (\(k, d) -> Both ((,) k <$> d))
-                (HashMap.intersectionWith Delta m1 m2) ++
-            values Insert (HashMap.difference m2 m1) ++
-            values Delete (HashMap.difference m1 m2)
-
-        values f m = f <$> HashMap.toList m
-
-        recover' = recover (uncurry HashMap.insert) HashMap.empty
+        go (Insert y) (Delta xs ys) = Delta xs (y:ys)
+        go (Delete x) (Delta xs ys) = Delta (x:xs) ys
+        go (Both xy)  d             = (:) <$> xy <*> d
