@@ -9,9 +9,12 @@
 module FRP.GHCJS.Diff
     ( -- * Deltas
       Delta(..)
+    , oldValue
+    , newValue
     , slice
     , match
-    , matchOn
+    , equal
+    , equalOn
       -- * Diffs
     , Diff(..)
     , Edit(..)
@@ -34,6 +37,14 @@ instance Applicative Delta where
     pure a = Delta a a
     Delta f g <*> Delta x y = Delta (f x) (g y)
 
+-- | Get the old value of a 'Delta'.
+oldValue :: Delta a -> a
+oldValue (Delta x _) = x
+
+-- | Get the new value of a 'Delta'
+newValue :: Delta a -> a
+newValue (Delta _ y) = y
+
 -- | Focus on and compare one part of the structure.
 slice :: ALens s t a b -> Lens (Delta s) (Delta t) (Delta a) (Delta b)
 slice l = lens (fmap (^# l)) (\s b -> storing l <$> b <*> s)
@@ -43,10 +54,14 @@ slice l = lens (fmap (^# l)) (\s b -> storing l <$> b <*> s)
 match :: APrism' s a -> Prism' (Delta s) (Delta a)
 match = below
 
+-- | A 'Fold' that matches only if the old and new version are equal.
+equal :: Eq a => Fold (Delta a) (Delta a)
+equal = equalOn id
+
 -- | A 'Fold' that matches only if both the old and new versions yield the
 -- same value when the getter is applied.
-matchOn :: Eq a => (s -> a) -> Fold (Delta s) (Delta s)
-matchOn f = filtered $ \(Delta x y) -> f x == f y
+equalOn :: Eq a => Getting a s a -> Fold (Delta s) (Delta s)
+equalOn l = filtered $ \(Delta x y) -> view l x == view l y
 
 -- | Types that can be deconstructed into edit scripts.
 class Diff a b | a -> b where
@@ -59,11 +74,11 @@ class Diff a b | a -> b where
 data Edit a
     -- | An item present in the new version, but not the old.
     = Insert a
-    -- | An item present in the old version, but no the new.
+    -- | An item present in the old version, but not the new.
     | Delete a
     -- | An item present in both versions.
     | Both (Delta a)
-    deriving (Functor)
+    deriving (Eq, Read, Show, Functor, Foldable, Traversable)
 
 -- | Recover the two values from an edit script using a fold.
 recover :: (b -> a -> a) -> a -> [Edit b] -> Delta a
