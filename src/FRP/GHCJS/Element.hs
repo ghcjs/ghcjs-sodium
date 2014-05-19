@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
 -- | DOM elements.
 module FRP.GHCJS.Element
@@ -6,7 +7,7 @@ module FRP.GHCJS.Element
       Element
     , element
       -- * Nodes
-    , Node
+    , Node(..)
     , _Parent
     , _Text
       -- * Tags
@@ -14,14 +15,19 @@ module FRP.GHCJS.Element
     , tagName
     , properties
     , children
+      -- * Properties
+    , Properties
+    , defaultProperties
+    , _class
+    , _id
     ) where
 
 import           Control.Lens.TH
-import           Data.Aeson
-import           Data.DList          (DList)
-import           Data.HashMap.Strict (HashMap)
+import           Data.DList      (DList)
+import           Data.HashSet    (HashSet)
+import qualified Data.HashSet    as HashSet
 import           Data.Monoid
-import           Data.Text           (Text)
+import           Data.Text       (Text)
 
 -- | A consecutive sequence of DOM elements.
 newtype Element = Element (DList Node)
@@ -35,10 +41,23 @@ data Node
 -- | An HTML tag.
 data Tag = Tag
     { _tagName    :: Text
-    , _properties :: HashMap Text Value
+    , _properties :: Properties
     , _children   :: Element
+    }
+
+-- | HTML properties.
+data Properties = Properties
+    { __class :: HashSet Text
+    , __id    :: Text
+    }
+
+defaultProperties :: Properties
+defaultProperties = Properties
+    { __class = HashSet.empty
+    , __id    = ""
     }
 
 makeIso    ''Element
 makePrisms ''Node
 makeLenses ''Tag
+makeLenses ''Properties
