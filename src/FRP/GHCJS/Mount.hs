@@ -4,20 +4,21 @@ module FRP.GHCJS.Mount
     ( mount
     ) where
 
-import           Control.Lens       hiding (children, element)
+import           Control.Applicative
+import           Control.Lens        hiding (children, element)
 import           Control.Monad
-import           Data.DList         (DList)
-import qualified Data.DList         as DList
+import           Data.DList          (DList)
+import qualified Data.DList          as DList
 import           Data.Foldable
-import qualified Data.HashSet       as HashSet
+import qualified Data.HashSet        as HashSet
 import           Data.Monoid
-import           Data.Text          (Text)
-import qualified Data.Text          as Text
+import           Data.Text           (Text)
+import qualified Data.Text           as Text
 import           FRP.Sodium
-import qualified GHCJS.DOM          as DOM
-import qualified GHCJS.DOM.Document as DOM
-import qualified GHCJS.DOM.Element  as DOM
-import qualified GHCJS.DOM.Node     as DOM
+import qualified GHCJS.DOM           as DOM
+import qualified GHCJS.DOM.Document  as DOM
+import qualified GHCJS.DOM.Element   as DOM
+import qualified GHCJS.DOM.Node      as DOM
 
 import           FRP.GHCJS.Delta
 import           FRP.GHCJS.Element
@@ -73,18 +74,26 @@ updateElement parent delta =
 
 -- | Update a 'Node' on a child node.
 updateNode :: DOM.Node -> DOM.Node -> Delta Node -> IO ()
-updateNode parent child delta =
-    case delta ^? match _Parent . equalOn tagName of
-        Nothing -> do
-            el <- constructNode (newValue delta)
-            void $ DOM.nodeReplaceChild parent (Just el) (Just child)
-        Just d  -> updateTag child d
+updateNode parent child delta = case patterns of
+    Just m  -> m
+    Nothing -> do
+        el <- constructNode (newValue delta)
+        void $ DOM.nodeReplaceChild parent (Just el) (Just child)
+  where
+    patterns = updateTag  child <$> delta ^? match _Parent . equalOn tagName
+           <|> updateText child <$> delta ^? match _Text
 
 -- | Update a 'Tag' on a node.
 updateTag :: DOM.Node -> Delta Tag -> IO ()
 updateTag node delta = do
     delta ^! slice properties . act (updateProperties node)
     updateElement node (delta ^. slice children)
+
+-- | Update a text node.
+updateText :: DOM.Node -> Delta Text -> IO ()
+updateText node (Delta a b)
+    | a == b    = return ()
+    | otherwise = DOM.nodeSetNodeValue node b
 
 -- | Update 'Properties' on a node.
 updateProperties :: DOM.Node -> Delta Properties -> IO ()
