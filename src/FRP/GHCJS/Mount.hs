@@ -96,9 +96,11 @@ constructTag tag = do
     Just document <- DOM.currentDocument
     Just el <- DOM.documentCreateElement document (tag ^. tagName)
     let n = DOM.toNode el
-    mountProperties n (Delta defaultProperties (tag ^. properties))
-    mountElement    n (Delta mempty            (tag ^. children  ))
+    mountTag n (Delta emptyTag tag)
     return n
+  where
+    emptyTag = tag & properties .~ defaultProperties
+                   & children   .~ mempty
 
 -- | Construct a concrete text node.
 constructText :: Text -> IO DOM.Node
