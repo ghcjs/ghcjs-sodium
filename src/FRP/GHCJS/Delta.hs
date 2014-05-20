@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE RankNTypes        #-}
 -- | Lenses for diffing data types.
-module FRP.GHCJS.Diff
+module FRP.GHCJS.Delta
     ( -- * Deltas
       Delta(..)
     , oldValue

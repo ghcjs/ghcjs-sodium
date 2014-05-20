@@ -18,7 +18,7 @@ import qualified GHCJS.DOM.Document as DOM
 import qualified GHCJS.DOM.Element  as DOM
 import qualified GHCJS.DOM.Node     as DOM
 
-import           FRP.GHCJS.Diff
+import           FRP.GHCJS.Delta
 import           FRP.GHCJS.Element
 
 -- | A 'DList' is isomorphic to a list.
