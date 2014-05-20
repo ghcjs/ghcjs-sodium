@@ -26,12 +26,9 @@ library
   ghc-options: -Wall
 
   build-depends:
-    aeson,
     base,
     dlist,
-    ghcjs-base,
     ghcjs-dom,
-    hashable,
     lens,
     sodium,
     text,
