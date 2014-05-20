@@ -40,3 +40,4 @@ library
   exposed-modules:
     FRP.GHCJS.Diff
     FRP.GHCJS.Element
+    FRP.GHCJS.Mount
