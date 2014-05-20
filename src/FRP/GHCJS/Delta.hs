@@ -53,8 +53,8 @@ equal = equalOn id
 
 -- | A 'Fold' that matches only if both the old and new versions yield the
 -- same value when the getter is applied.
-equalOn :: Eq a => Getting a s a -> Fold (Delta s) (Delta s)
-equalOn l = filtered $ \(Delta x y) -> view l x == view l y
+equalOn :: Eq a => (s -> a) -> Fold (Delta s) (Delta s)
+equalOn f = filtered $ \(Delta x y) -> f x == f y
 
 -- | A single edit in an edit script.
 data Edit a

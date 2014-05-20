@@ -31,8 +31,7 @@ library
     ghcjs-dom,
     lens,
     sodium,
-    text,
-    unordered-containers
+    text
 
   exposed-modules:
     FRP.GHCJS.Element
