@@ -20,14 +20,18 @@ data Node
     = Parent Component
     | Text Text
 
--- | An HTML component on top of a DOM node. The component name should
--- uniquely identify the type or class of component, so the component can be
--- reused for 'update'. In other words, 'update' and 'delete' may assume that
--- the 'DOM.Node' has been created by 'create' of the same component name.
+-- | An HTML component.
 data Component = Component
-    { name     :: Text
+    { -- | A component name that uniquely identifies the type or class of
+      -- this component. 'update' and 'delete' may assume that the 'DOM.Node'
+      -- has been created by 'create' of the same component name.
+      name     :: Text
+      -- | Create the component.
     , create   :: IO DOM.Node
+      -- | Update an existing DOM node for this component.
     , update   :: DOM.Node -> IO ()
+      -- | Delete the component, performing any cleanup.
     , delete   :: DOM.Node -> IO ()
+      -- | The component's children.
     , children :: Element
     }
