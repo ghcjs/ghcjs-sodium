@@ -21,7 +21,7 @@ import qualified GHCJS.DOM.Element   as DOM
 import qualified GHCJS.DOM.Node      as DOM
 
 import           FRP.GHCJS.Delta
-import           FRP.GHCJS.Element
+import           FRP.GHCJS.Types
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.

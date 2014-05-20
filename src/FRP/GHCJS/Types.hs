@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
--- | DOM elements.
-module FRP.GHCJS.Element
+-- | DOM types.
+module FRP.GHCJS.Types
     ( -- * Elements
       Element(..)
     , element
@@ -51,6 +51,7 @@ data Properties = Properties
     , __id    :: Text
     }
 
+-- | Default properties.
 defaultProperties :: Properties
 defaultProperties = Properties
     { __class = HashSet.empty
