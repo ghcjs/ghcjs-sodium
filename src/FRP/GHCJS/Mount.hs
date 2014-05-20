@@ -82,10 +82,10 @@ updateNode parent n delta = case patterns of
         n' <- createNode (newValue delta)
         void $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
-    patterns = updateParent <$> delta ^? match _Parent . equalOn (name . fst)
+    patterns = updateTag    <$> delta ^? match _Tag . equalOn (name . fst)
            <|> updateText n <$> delta ^? match _Text
 
-    updateParent d = updateComponent n (fst <$> d) (snd <$> d)
+    updateTag d = updateComponent n (fst <$> d) (snd <$> d)
 
 -- | Update a 'Component'.
 updateComponent :: DOM.Node -> Delta Component -> Delta Element -> IO ()
@@ -101,8 +101,8 @@ updateText n (Delta a b)
 
 -- | Construct a concrete DOM node from a 'Node'.
 createNode :: Node -> IO DOM.Node
-createNode (Parent c cs) = createComponent c cs
-createNode (Text s)      = createText s
+createNode (Tag c cs) = createComponent c cs
+createNode (Text s)   = createText s
 
 -- | Construct a 'Component'.
 createComponent :: Component -> Element -> IO DOM.Node
@@ -123,8 +123,8 @@ createText s = do
 
 -- | Delete a 'Node'.
 deleteNode :: DOM.Node -> Node -> IO ()
-deleteNode n (Parent c cs) = deleteComponent n c cs
-deleteNode _ _             = return ()
+deleteNode n (Tag c cs) = deleteComponent n c cs
+deleteNode _ _          = return ()
 
 -- | Delete a 'Component'.
 deleteComponent :: DOM.Node -> Component -> Element -> IO ()

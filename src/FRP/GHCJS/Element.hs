@@ -14,7 +14,7 @@ import           FRP.GHCJS.Types
 
 -- | Create a component.
 component :: Component -> Element -> Element
-component c = Element . DList.singleton . Parent c
+component c = Element . DList.singleton . Tag c
 
 -- | Create a text node.
 text :: Text -> Element

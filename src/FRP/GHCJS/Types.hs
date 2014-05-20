@@ -17,7 +17,7 @@ newtype Element = Element (DList Node)
 
 -- | A DOM node.
 data Node
-    = Parent Component Element
+    = Tag Component Element
     | Text Text
 
 -- | An HTML component.
