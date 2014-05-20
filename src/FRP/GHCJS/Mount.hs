@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
--- | Mounting 'Delta's on external DOM elements.
+-- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
-    ( mountElement
+    ( mount
     ) where
 
 import           Control.Lens       hiding (children, element)
@@ -13,6 +13,7 @@ import qualified Data.HashSet       as HashSet
 import           Data.Monoid
 import           Data.Text          (Text)
 import qualified Data.Text          as Text
+import           FRP.Sodium
 import qualified GHCJS.DOM          as DOM
 import qualified GHCJS.DOM.Document as DOM
 import qualified GHCJS.DOM.Element  as DOM
@@ -21,13 +22,27 @@ import qualified GHCJS.DOM.Node     as DOM
 import           FRP.GHCJS.Delta
 import           FRP.GHCJS.Element
 
+-- | Given a starting value, bundle the old and new values into a 'Delta'
+-- when the 'Event' fires.
+deltas :: a -> Event a -> Reactive (Event (Delta a))
+deltas z e = do
+    b <- hold z e
+    return $ snapshot (flip Delta) e b
+
+-- | Mount a dynamic 'Element' on a parent node. The returned action will
+-- stop updating the element.
+mount :: DOM.Node -> Behavior Element -> Reactive (IO ())
+mount parent b = do
+    e <- deltas mempty (value b)
+    listen e (updateElement parent)
+
 -- | A 'DList' is isomorphic to a list.
 dlist :: Iso [a] [b] (DList a) (DList b)
 dlist = iso DList.fromList DList.toList
 
--- | Mount an 'Element' on a parent DOM node.
-mountElement :: DOM.Node -> Delta Element -> IO ()
-mountElement parent delta =
+-- | Update an 'Element' on a parent DOM node.
+updateElement :: DOM.Node -> Delta Element -> IO ()
+updateElement parent delta =
     delta ^! slice (from element . from dlist) . diff . act editChildren
   where
     editChildren edits = do
@@ -51,29 +66,29 @@ mountElement parent delta =
 
     editChild (Just c) (Both d) = do
         c' <- DOM.nodeGetNextSibling c
-        mountNode parent c d
+        updateNode parent c d
         return c'
 
     editChild _ _ = return Nothing
 
--- | Mount a 'Node' on a child node.
-mountNode :: DOM.Node -> DOM.Node -> Delta Node -> IO ()
-mountNode parent child delta =
+-- | Update a 'Node' on a child node.
+updateNode :: DOM.Node -> DOM.Node -> Delta Node -> IO ()
+updateNode parent child delta =
     case delta ^? match _Parent . equalOn tagName of
         Nothing -> do
             el <- constructNode (newValue delta)
             void $ DOM.nodeReplaceChild parent (Just child) (Just el)
-        Just d  -> mountTag child d
+        Just d  -> updateTag child d
 
--- | Mount a 'Tag' on a node.
-mountTag :: DOM.Node -> Delta Tag -> IO ()
-mountTag node delta = do
-    delta ^! slice properties . act (mountProperties node)
-    mountElement node (delta ^. slice children)
+-- | Update a 'Tag' on a node.
+updateTag :: DOM.Node -> Delta Tag -> IO ()
+updateTag node delta = do
+    delta ^! slice properties . act (updateProperties node)
+    updateElement node (delta ^. slice children)
 
--- | Mount 'Properties' on a node.
-mountProperties :: DOM.Node -> Delta Properties -> IO ()
-mountProperties node delta = do
+-- | Update 'Properties' on a node.
+updateProperties :: DOM.Node -> Delta Properties -> IO ()
+updateProperties node delta = do
     property _id    id          DOM.elementSetId
     property _class toClassList DOM.elementSetClassName
   where
@@ -96,7 +111,7 @@ constructTag tag = do
     Just document <- DOM.currentDocument
     Just el <- DOM.documentCreateElement document (tag ^. tagName)
     let n = DOM.toNode el
-    mountTag n (Delta emptyTag tag)
+    updateTag n (Delta emptyTag tag)
     return n
   where
     emptyTag = tag & properties .~ defaultProperties
