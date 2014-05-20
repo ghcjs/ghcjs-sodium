@@ -4,19 +4,19 @@
 -- | DOM elements.
 module FRP.GHCJS.Element
     ( -- * Elements
-      Element
+      Element(..)
     , element
       -- * Nodes
     , Node(..)
     , _Parent
     , _Text
       -- * Tags
-    , Tag
+    , Tag(..)
     , tagName
     , properties
     , children
       -- * Properties
-    , Properties
+    , Properties(..)
     , defaultProperties
     , _class
     , _id
