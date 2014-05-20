@@ -13,8 +13,8 @@ import           Data.Text       (Text)
 import           FRP.GHCJS.Types
 
 -- | Create a component.
-component :: Component -> Element
-component = Element . DList.singleton . Parent
+component :: Component -> Element -> Element
+component c = Element . DList.singleton . Parent c
 
 -- | Create a text node.
 text :: Text -> Element

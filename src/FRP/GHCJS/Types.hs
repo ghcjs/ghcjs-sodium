@@ -17,7 +17,7 @@ newtype Element = Element (DList Node)
 
 -- | A DOM node.
 data Node
-    = Parent Component
+    = Parent Component Element
     | Text Text
 
 -- | An HTML component.
@@ -26,12 +26,12 @@ data Component = Component
       -- this component. 'update' and 'delete' may assume that the 'DOM.Node'
       -- has been created by 'create' of the same component name.
       name     :: Text
+      -- | The underlying tag name.
+    , tagName  :: Text
       -- | Create the component.
-    , create   :: IO DOM.Node
+    , create   :: DOM.Node -> IO ()
       -- | Update an existing DOM node for this component.
     , update   :: DOM.Node -> IO ()
       -- | Delete the component, performing any cleanup.
     , delete   :: DOM.Node -> IO ()
-      -- | The component's children.
-    , children :: Element
     }

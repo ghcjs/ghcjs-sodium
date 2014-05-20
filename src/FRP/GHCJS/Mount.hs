@@ -6,7 +6,7 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens        hiding (children, element)
+import           Control.Lens        hiding (element)
 import           Control.Monad
 import           Data.DList          (DList)
 import qualified Data.DList          as DList
@@ -76,20 +76,22 @@ updateElement parent delta =
 
 -- | Update a 'Node' on a child node.
 updateNode :: DOM.Node -> DOM.Node -> Delta Node -> IO ()
-updateNode parent child delta = case patterns of
+updateNode parent n delta = case patterns of
     Just m  -> m
     Nothing -> do
-        n <- createNode (newValue delta)
-        void $ DOM.nodeReplaceChild parent (Just n) (Just child)
+        n' <- createNode (newValue delta)
+        void $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
-    patterns = updateComponent child <$> delta ^? match _Parent . equalOn name
-           <|> updateText      child <$> delta ^? match _Text
+    patterns = updateParent <$> delta ^? match _Parent . equalOn (name . fst)
+           <|> updateText n <$> delta ^? match _Text
 
--- | Update a 'Tag' on a node.
-updateComponent :: DOM.Node -> Delta Component -> IO ()
-updateComponent n delta = do
+    updateParent d = updateComponent n (fst <$> d) (snd <$> d)
+
+-- | Update a 'Component'.
+updateComponent :: DOM.Node -> Delta Component -> Delta Element -> IO ()
+updateComponent n delta cs = do
+    updateElement n cs
     update (newValue delta) n
-    updateElement n (children <$> delta)
 
 -- | Update a text node.
 updateText :: DOM.Node -> Delta Text -> IO ()
@@ -99,8 +101,18 @@ updateText n (Delta a b)
 
 -- | Construct a concrete DOM node from a 'Node'.
 createNode :: Node -> IO DOM.Node
-createNode (Parent c) = create c
-createNode (Text s)   = createText s
+createNode (Parent c cs) = createComponent c cs
+createNode (Text s)      = createText s
+
+-- | Construct a 'Component'.
+createComponent :: Component -> Element -> IO DOM.Node
+createComponent c cs = do
+    Just document <- DOM.currentDocument
+    Just e <- DOM.documentCreateElement document (tagName c)
+    let n = DOM.toNode e
+    updateElement n (Delta mempty cs)
+    create c n
+    return n
 
 -- | Construct a concrete text node.
 createText :: Text -> IO DOM.Node
@@ -111,5 +123,11 @@ createText s = do
 
 -- | Delete a 'Node'.
 deleteNode :: DOM.Node -> Node -> IO ()
-deleteNode n (Parent c) = delete c n
-deleteNode _ _          = return ()
+deleteNode n (Parent c cs) = deleteComponent n c cs
+deleteNode _ _             = return ()
+
+-- | Delete a 'Component'.
+deleteComponent :: DOM.Node -> Component -> Element -> IO ()
+deleteComponent n c cs = do
+    delete c n
+    cs ^! from element . folded . act (deleteNode n)
