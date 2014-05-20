@@ -10,7 +10,8 @@ import qualified GHCJS.DOM.Node as DOM
 
 -- | A DOM node.
 data Element
-    = Parent Component [Element]
+    = Extend Component Element
+    | Tag Text [Element]
     | Text Text
 
 -- | An HTML component.
@@ -19,8 +20,6 @@ data Component = Component
       -- this component. 'update' and 'delete' may assume that the 'DOM.Node'
       -- has been created by 'create' of the same component name.
       name    :: Text
-      -- | The underlying tag name.
-    , tagName :: Text
       -- | Create the component.
     , create  :: DOM.Node -> IO ()
       -- | Update an existing DOM node for this component.

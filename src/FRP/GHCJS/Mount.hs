@@ -41,12 +41,15 @@ updateElement parent n de = case patterns of
         n' <- createElement (newValue de)
         void $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
-    patterns = updateTag  <$> de ^? match _Parent . equalOn (_1 . to name)
-           <|> updateText <$> de ^? match _Text
+    patterns = updateComponent <$> de ^? match _Extend . equalOn (_1 . to name)
+           <|> updateTag       <$> de ^? match _Tag . equalOn _1
+           <|> updateText      <$> de ^? match _Text
 
-    updateTag dt = do
-        dt ^! slice _2 . act (updateChildren n)
+    updateComponent dt = do
+        dt ^! slice _2 . act (updateElement parent n)
         dt ^! slice _1 . to newValue . act (update ?? n)
+
+    updateTag dt = dt ^! slice _2 . act (updateChildren n)
 
     updateText (Delta a b)
         | a == b    = return ()
@@ -85,29 +88,25 @@ updateChildren parent des = des ^! diff . act editChildren
 
 -- | Construct a concrete DOM node from an 'Element'.
 createElement :: Element -> IO DOM.Node
-createElement e = do
+createElement (Extend c e) = do
+    n <- createElement e
+    create c n
+    return n
+createElement (Tag s cs)   = do
     Just document <- DOM.currentDocument
-    case e of
-        Parent c cs -> createTag document c cs
-        Text s      -> createText document s
-  where
-    createTag document c cs = do
-        Just t <- DOM.documentCreateElement document (tagName c)
-        let n = DOM.toNode t
-        updateChildren n (Delta [] cs)
-        create c n
-        return n
-
-    createText document s = do
-        Just t <- DOM.documentCreateTextNode document s
-        return (DOM.toNode t)
+    Just t <- DOM.documentCreateElement document s
+    let n = DOM.toNode t
+    updateChildren n (Delta [] cs)
+    return n
+createElement (Text s)     = do
+    Just document <- DOM.currentDocument
+    Just t <- DOM.documentCreateTextNode document s
+    return (DOM.toNode t)
 
 -- | Destroy an 'Element'.
 destroyElement :: DOM.Node -> Element -> IO ()
-destroyElement n = go
-  where
-    go (Parent c cs) = do
-        destroy c n
-        Prelude.mapM_ go cs
-
-    go _ = return ()
+destroyElement n (Extend c e) = do
+    destroy c n
+    destroyElement n e
+destroyElement n (Tag _ cs)   = updateChildren n (Delta cs [])
+destroyElement _ _            = return ()
