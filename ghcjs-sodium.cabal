@@ -38,4 +38,3 @@ library
 
   other-modules:
     FRP.GHCJS.Delta
-    FRP.GHCJS.Types

@@ -14,8 +14,8 @@ import qualified GHCJS.DOM           as DOM
 import qualified GHCJS.DOM.Document  as DOM
 import qualified GHCJS.DOM.Node      as DOM
 
+import           FRP.GHCJS.Element
 import           FRP.GHCJS.Delta
-import           FRP.GHCJS.Types
 
 makePrisms ''Element
 
