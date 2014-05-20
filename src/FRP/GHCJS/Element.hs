@@ -8,13 +8,16 @@ module FRP.GHCJS.Element
 import           Data.Text      (Text)
 import qualified GHCJS.DOM.Node as DOM
 
--- | A DOM node.
+-- | A document element.
 data Element
+      -- | Extend an 'Element' with initialization and update operations.
     = Extend Component Element
+      -- | A vanilla HTML tag.
     | Tag Text [Element]
+      -- | A text node.
     | Text Text
 
--- | An HTML component.
+-- | A logical component in the document.
 data Component = Component
     { -- | A component name that uniquely identifies the type or class of
       -- this component. 'update' and 'delete' may assume that the 'DOM.Node'
