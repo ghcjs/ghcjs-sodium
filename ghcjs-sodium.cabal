@@ -27,7 +27,6 @@ library
 
   build-depends:
     base,
-    dlist,
     ghcjs-dom,
     lens,
     sodium,
