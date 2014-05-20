@@ -51,7 +51,7 @@ updateElement parent delta =
 
     editChild c (Insert n) = do
         el <- constructNode n
-        _  <- DOM.nodeInsertBefore parent c (Just el)
+        _  <- DOM.nodeInsertBefore parent (Just el) c
         return c
 
     editChild (Just c) (Delete _) = do
@@ -77,7 +77,7 @@ updateNode parent child delta =
     case delta ^? match _Parent . equalOn tagName of
         Nothing -> do
             el <- constructNode (newValue delta)
-            void $ DOM.nodeReplaceChild parent (Just child) (Just el)
+            void $ DOM.nodeReplaceChild parent (Just el) (Just child)
         Just d  -> updateTag child d
 
 -- | Update a 'Tag' on a node.
