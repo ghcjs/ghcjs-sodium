@@ -51,17 +51,17 @@ updateElement parent delta =
 
     editChild c (Insert n) = do
         el <- constructNode n
-        DOM.nodeInsertBefore parent c (Just el)
+        _  <- DOM.nodeInsertBefore parent c (Just el)
         return c
 
     editChild (Just c) (Delete _) = do
         c' <- DOM.nodeGetNextSibling c
-        DOM.nodeRemoveChild parent (Just c)
+        _  <- DOM.nodeRemoveChild parent (Just c)
         return c'
 
     editChild Nothing (Both d) = do
         el <- constructNode (newValue d)
-        DOM.nodeAppendChild parent (Just el)
+        _  <- DOM.nodeAppendChild parent (Just el)
         return Nothing
 
     editChild (Just c) (Both d) = do
