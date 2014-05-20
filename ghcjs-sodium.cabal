@@ -36,5 +36,6 @@ library
 
   exposed-modules:
     FRP.GHCJS.Delta
+    FRP.GHCJS.Element
     FRP.GHCJS.Mount
     FRP.GHCJS.Types
