@@ -35,7 +35,9 @@ library
     unordered-containers
 
   exposed-modules:
-    FRP.GHCJS.Delta
     FRP.GHCJS.Element
     FRP.GHCJS.Mount
+
+  other-modules:
+    FRP.GHCJS.Delta
     FRP.GHCJS.Types
