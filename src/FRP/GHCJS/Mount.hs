@@ -31,10 +31,10 @@ deltas z e = do
 
 -- | Mount a dynamic 'Element' on a parent node. The returned action will
 -- stop updating the element.
-mount :: DOM.Node -> Behavior Element -> Reactive (IO ())
+mount :: DOM.IsNode e => e -> Behavior Element -> Reactive (IO ())
 mount parent b = do
     e <- deltas mempty (value b)
-    listen e (updateElement parent)
+    listen e (updateElement (DOM.toNode parent))
 
 -- | A 'DList' is isomorphic to a list.
 dlist :: Iso [a] [b] (DList a) (DList b)
