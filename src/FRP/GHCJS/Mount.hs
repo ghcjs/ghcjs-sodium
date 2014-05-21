@@ -33,7 +33,14 @@ mount parent b = do
     e <- deltas [] (value b)
     listen e (updateChildren (DOM.toNode parent))
 
--- | Update an 'Element' on a DOM node.
+-- | Update an 'Element' on a DOM node. For creation and updates, we modify
+-- the tree in the order:
+--
+-- 1. The underlying tag is created and attached to the parent, if necessary.
+-- 2. The children are created/updated.
+-- 3. This component is created/updated, inner components to outer ones.
+--
+-- When an element is destroyed, they are destroyed in the opposite order.
 updateElement :: DOM.Node -> DOM.Node -> Delta Element -> IO ()
 updateElement parent n de = case patterns of
     Just m  -> m
