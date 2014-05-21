@@ -41,7 +41,8 @@ updateElement parent n de = case patterns of
         n' <- createElement (newValue de)
         void $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
-    patterns = updateComponent <$> de ^? match _Extend . equalOn (_1 . to name)
+    patterns = updateComponent <$>
+                   de ^? match _Extend . equalOn (_1 . to componentName)
            <|> updateTag       <$> de ^? match _Tag . equalOn _1
            <|> updateText      <$> de ^? match _Text
 

@@ -22,11 +22,11 @@ data Component = Component
     { -- | A component name that uniquely identifies the type or class of
       -- this component. 'update' and 'delete' may assume that the 'DOM.Node'
       -- has been created by 'create' of the same component name.
-      name    :: Text
+      componentName :: Text
       -- | Create the component.
-    , create  :: DOM.Node -> IO ()
+    , create        :: DOM.Node -> IO ()
       -- | Update an existing DOM node for this component.
-    , update  :: DOM.Node -> IO ()
+    , update        :: DOM.Node -> IO ()
       -- | Delete the component, performing any cleanup.
-    , destroy :: DOM.Node -> IO ()
+    , destroy       :: DOM.Node -> IO ()
     }
