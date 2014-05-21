@@ -5,7 +5,7 @@ module FRP.GHCJS.Element
     , Component(..)
     ) where
 
-import           Data.Text      (Text)
+import           Data.Text
 import qualified GHCJS.DOM.Node as DOM
 
 -- | A document element.
