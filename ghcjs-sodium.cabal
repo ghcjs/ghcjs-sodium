@@ -33,6 +33,7 @@ library
     text
 
   exposed-modules:
+    FRP.GHCJS.Default
     FRP.GHCJS.Element
     FRP.GHCJS.Mount
 
