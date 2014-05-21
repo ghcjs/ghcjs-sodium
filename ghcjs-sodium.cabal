@@ -27,10 +27,12 @@ library
 
   build-depends:
     base,
+    containers,
     ghcjs-dom,
     lens,
     sodium,
-    text
+    text,
+    unordered-containers
 
   exposed-modules:
     FRP.GHCJS.Attributes
