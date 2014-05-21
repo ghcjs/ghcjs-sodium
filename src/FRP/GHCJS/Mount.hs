@@ -47,8 +47,8 @@ updateElement parent n de = case patterns of
            <|> updateText      <$> de ^? match _Text
 
     updateComponent dt = do
-        dt ^! slice _2 . act (updateElement parent n)
-        dt ^! slice _1 . to newValue . act (update ?? n)
+        updateElement parent n (dt ^. slice _2)
+        update (dt ^. slice _1 . to newValue) n
 
     updateTag dt = dt ^! slice _2 . act (updateChildren n)
 
@@ -58,7 +58,7 @@ updateElement parent n de = case patterns of
 
 -- | Update a list of child 'Element's on a parent DOM 'DOM.Node'.
 updateChildren :: DOM.Node -> Delta [Element] -> IO ()
-updateChildren parent des = des ^! diff . act editChildren
+updateChildren parent des = editChildren (des ^. diff)
   where
     editChildren edits = do
         c <- DOM.nodeGetFirstChild parent
