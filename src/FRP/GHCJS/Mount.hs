@@ -10,7 +10,6 @@ import           Control.Monad.IO.Class
 import           Data.Foldable          (foldlM)
 import           Data.IORef
 import           FRP.Sodium
-import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
@@ -26,9 +25,9 @@ deltas z e = do
     return $ snapshot (flip Delta) e b
 
 -- | Create a new 'MountState' for a mount point.
-newMountState :: IO MountState
-newMountState = do
-    Just d <- currentDocument
+newMountState :: Node -> IO MountState
+newMountState n = do
+    Just d <- nodeGetOwnerDocument n
     return MountState
         { _document = d
         }
@@ -38,7 +37,7 @@ newMountState = do
 mount :: IsNode e => e -> Behavior [Element] -> IO (IO ())
 mount parent b = do
     let n = toNode parent
-    s   <- newMountState
+    s   <- newMountState n
     ref <- newIORef s
     sync $ do
         e <- deltas [] (value b)
