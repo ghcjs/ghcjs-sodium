@@ -6,7 +6,7 @@ module FRP.GHCJS.Element
     , Component(..)
     , extend
       -- * Text
-    , text 
+    , text
       -- * Grouping content
     , div
     , main
@@ -14,11 +14,11 @@ module FRP.GHCJS.Element
     , span
     ) where
 
-import Data.Text (Text)
-import Prelude   hiding (div, span)
+import           Data.Text            (Text)
+import           Prelude              hiding (div, span)
 
-import FRP.GHCJS.Attributes
-import FRP.GHCJS.Types
+import           FRP.GHCJS.Attributes
+import           FRP.GHCJS.Types
 
 -- | Extend an element with a 'Component'.
 extend :: Component -> Element -> Element
