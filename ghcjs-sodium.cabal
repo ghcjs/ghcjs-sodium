@@ -37,6 +37,7 @@ library
   exposed-modules:
     FRP.GHCJS.Attributes
     FRP.GHCJS.Default
+    FRP.GHCJS.Element
     FRP.GHCJS.Mount
 
   other-modules:
