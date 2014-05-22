@@ -30,6 +30,7 @@ library
     containers,
     ghcjs-base,
     ghcjs-dom,
+    hashable,
     lens,
     sodium,
     text,
@@ -43,4 +44,5 @@ library
 
   other-modules:
     FRP.GHCJS.Delta
+    FRP.GHCJS.StableRef
     FRP.GHCJS.Types
