@@ -28,6 +28,7 @@ library
   build-depends:
     base,
     containers,
+    dlist,
     ghcjs-base,
     ghcjs-dom,
     hashable,
@@ -40,6 +41,7 @@ library
     FRP.GHCJS.Attributes
     FRP.GHCJS.Default
     FRP.GHCJS.Element
+    FRP.GHCJS.Input
     FRP.GHCJS.Mount
 
   other-modules:
