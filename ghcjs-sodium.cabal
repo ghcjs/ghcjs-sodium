@@ -33,8 +33,10 @@ library
     ghcjs-dom,
     hashable,
     lens,
+    mtl,
     sodium,
     text,
+    transformers,
     unordered-containers
 
   exposed-modules:
@@ -46,6 +48,7 @@ library
 
   other-modules:
     FRP.GHCJS.Delta
+    FRP.GHCJS.IOState
     FRP.GHCJS.MultiMap
     FRP.GHCJS.StableRef
     FRP.GHCJS.Types

@@ -27,6 +27,7 @@ module FRP.GHCJS.Attributes
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.IO.Class
 import           Data.Foldable                 (Foldable)
 import qualified Data.Foldable                 as Foldable
 import           Data.HashMap.Strict           (HashMap)
@@ -46,11 +47,12 @@ import           GHCJS.DOM.Node
 import           GHCJS.DOM.Types               (maybeJSNull)
 
 import           FRP.GHCJS.Default
+import           FRP.GHCJS.Types
 
 -- | DOM element attributes and properties.
 class Default a => Attributes a where
     -- | Apply a set of attributes to a DOM node.
-    applyAttributes :: a -> Node -> IO ()
+    applyAttributes :: a -> Node -> Mount ()
 
 -- | Set or remove an attribute from an element.
 attribute
@@ -157,7 +159,7 @@ makeClassy ''GlobalAttributes
 instance Default GlobalAttributes
 
 instance Attributes GlobalAttributes where
-    applyAttributes a n = do
+    applyAttributes a n = liftIO $ do
         attr accessKey       "accessKey"       (nonNull . spaceSep Text.singleton)
         attr contentEditable "contentEditable" ternary
         attr contextMenu     "contextmenu"     nonNull

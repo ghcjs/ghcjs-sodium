@@ -4,15 +4,18 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens        hiding (children)
+import           Control.Lens           hiding (children)
 import           Control.Monad
-import           Data.Foldable       (foldlM)
+import           Control.Monad.IO.Class
+import           Data.Foldable          (foldlM)
+import           Data.IORef
 import           FRP.Sodium
 import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
 import           FRP.GHCJS.Delta
+import           FRP.GHCJS.IOState
 import           FRP.GHCJS.Types
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
@@ -22,12 +25,24 @@ deltas z e = do
     b <- hold z e
     return $ snapshot (flip Delta) e b
 
+-- | Create a new 'MountState' for a mount point.
+newMountState :: IO MountState
+newMountState = do
+    Just d <- currentDocument
+    return MountState
+        { _document = d
+        }
+
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
 -- The returned action will stop updating the DOM.
-mount :: IsNode e => e -> Behavior [Element] -> Reactive (IO ())
+mount :: IsNode e => e -> Behavior [Element] -> IO (IO ())
 mount parent b = do
-    e <- deltas [] (value b)
-    listen e (updateChildren (toNode parent))
+    let n = toNode parent
+    s   <- newMountState
+    ref <- newIORef s
+    sync $ do
+        e <- deltas [] (value b)
+        listen e (\des -> runIOState (updateChildren n des) ref)
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
@@ -37,12 +52,12 @@ mount parent b = do
 -- 3. This component is created/updated, inner components to outer ones.
 --
 -- When an element is destroyed, they are destroyed in the opposite order.
-updateElement :: Node -> Node -> Delta Element -> IO ()
+updateElement :: Node -> Node -> Delta Element -> Mount ()
 updateElement parent n de = case patterns of
     Just m  -> m
     Nothing -> do
         n' <- createElement (newValue de)
-        void $ nodeReplaceChild parent (Just n') (Just n)
+        void . liftIO $ nodeReplaceChild parent (Just n') (Just n)
   where
     patterns = updateComponent <$> de ^? match _Extend . equalOn (_1 . to componentName)
            <|> updateTag       <$> de ^? match _Tag . equalOn _1
@@ -56,58 +71,58 @@ updateElement parent n de = case patterns of
 
     updateText (Delta a b)
         | a == b    = return ()
-        | otherwise = nodeSetNodeValue n b
+        | otherwise = liftIO $ nodeSetNodeValue n b
 
 -- | Update a list of child 'Element's on a parent DOM 'Node'.
-updateChildren :: Node -> Delta [Element] -> IO ()
+updateChildren :: Node -> Delta [Element] -> Mount ()
 updateChildren parent des = editChildren (des ^. diff)
   where
     editChildren edits = do
-        c <- nodeGetFirstChild parent
+        c <- liftIO $ nodeGetFirstChild parent
         void $ foldlM editChild c edits
 
     editChild c (Insert e) = do
         n <- createElement e
-        _ <- nodeInsertBefore parent (Just n) c
+        _ <- liftIO $ nodeInsertBefore parent (Just n) c
         return c
 
     editChild (Just c) (Delete e) = do
-        c' <- nodeGetNextSibling c
+        c' <- liftIO $ nodeGetNextSibling c
         destroyElement c e
-        _ <- nodeRemoveChild parent (Just c)
+        _ <- liftIO $ nodeRemoveChild parent (Just c)
         return c'
 
     editChild Nothing (Both de) = do
         n <- createElement (newValue de)
-        _ <- nodeAppendChild parent (Just n)
+        _ <- liftIO $ nodeAppendChild parent (Just n)
         return Nothing
 
     editChild (Just c) (Both de) = do
-        c' <- nodeGetNextSibling c
+        c' <- liftIO $ nodeGetNextSibling c
         updateElement parent c de
         return c'
 
     editChild _ _ = return Nothing
 
 -- | Construct a concrete DOM node from an 'Element'.
-createElement :: Element -> IO Node
+createElement :: Element -> Mount Node
 createElement (Extend c e) = do
     n <- createElement e
     create c n
     return n
 createElement (Tag s cs)   = do
-    Just document <- currentDocument
-    Just t <- documentCreateElement document s
+    d <- use document
+    Just t <- liftIO $ documentCreateElement d s
     let n = toNode t
     updateChildren n (Delta [] cs)
     return n
 createElement (Text s)     = do
-    Just document <- currentDocument
-    Just t <- documentCreateTextNode document s
+    d <- use document
+    Just t <- liftIO $ documentCreateTextNode d s
     return (toNode t)
 
 -- | Destroy an 'Element'.
-destroyElement :: Node -> Element -> IO ()
+destroyElement :: Node -> Element -> Mount ()
 destroyElement n (Extend c e) = do
     destroy c n
     destroyElement n e
