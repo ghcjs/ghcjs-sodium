@@ -6,9 +6,10 @@ module FRP.GHCJS.Default
     ( Default(..)
     ) where
 
-import           Data.HashSet as HashSet
-import           Data.Text    as Text
-import           Data.Set     as Set
+import           Data.HashMap.Strict as HashMap
+import           Data.HashSet        as HashSet
+import           Data.Set            as Set
+import           Data.Text           as Text
 import           GHC.Generics
 
 -- | A class for default values.
@@ -32,6 +33,9 @@ instance Default (Set a) where
 
 instance Default (HashSet a) where
     def = HashSet.empty
+
+instance Default (HashMap k a) where
+    def = HashMap.empty
 
 -- | Generic default values.
 class GDefault f where

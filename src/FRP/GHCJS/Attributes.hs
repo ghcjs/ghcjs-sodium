@@ -22,19 +22,20 @@ module FRP.GHCJS.Attributes
     , style
     , tabIndex
     , title
-    ,
     ) where
 
 import           Control.Lens
 import           Control.Monad
-import           Data.Foldable         as Foldable
+import           Data.Foldable                 as Foldable
+import           Data.HashMap.Strict           as HashMap
 import           Data.HashSet
 import           Data.Set
-import           Data.Text             as Text
-import           GHC.Generics          (Generic)
-import qualified GHCJS.DOM.Element     as DOM
-import qualified GHCJS.DOM.HTMLElement as DOM
-import qualified GHCJS.DOM.Node        as DOM
+import           Data.Text                     as Text
+import           GHC.Generics                  (Generic)
+import qualified GHCJS.DOM.CSSStyleDeclaration as DOM
+import qualified GHCJS.DOM.Element             as DOM
+import qualified GHCJS.DOM.HTMLElement         as DOM
+import qualified GHCJS.DOM.Node                as DOM
 
 import           FRP.GHCJS.Default
 
@@ -73,6 +74,20 @@ property a e l getProp setProp f = do
     old <- getProp e
     when (old /= new) $ setProp e new
 
+-- | Update the style of an element.
+updateStyle
+    :: DOM.IsElement e
+    => a
+    -> e
+    -> Getting Style a Style
+    -> IO ()
+updateStyle a e l = do
+    Just decl <- DOM.elementGetStyle e
+    Foldable.forM_ (HashMap.toList (a ^. l)) $ \(prop, new) -> do
+        -- TODO: this may return null
+        old <- DOM.cssStyleDeclarationGetPropertyValue decl prop
+        when (old /= new) $ DOM.cssStyleDeclarationSetProperty decl prop new ("" :: Text)
+
 -- | Convert a non-empty text attribute.
 nonNull :: Text -> Maybe Text
 nonNull t = if Text.null t then Nothing else Just t
@@ -93,12 +108,12 @@ spaceSep f = Text.intercalate " " . fmap f . Foldable.toList
 -- | An element identifier.
 type ElementId = Text
 
+-- | A CSS style declaration.
+type Style = HashMap Text Text
+
 -- | Text directionality.
 data Dir = LTR | RTL | Auto
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
-
--- | Element style.
-type Style = ()
 
 -- | Global attributes.
 data GlobalAttributes = GlobalAttributes
@@ -133,11 +148,11 @@ instance Attributes GlobalAttributes where
         attr tabIndex        "tabindex"        (fmap showText)
         attr title           "title"           nonNull
 
-
         prop className DOM.elementGetClassName  DOM.elementSetClassName  (spaceSep id)
         prop hidden    DOM.htmlElementGetHidden DOM.htmlElementSetHidden id
         prop id_       DOM.elementGetId         DOM.elementSetId         id
-        -- TODO: style
+
+        updateStyle a e style
       where
         e    = DOM.castToHTMLElement n
         attr = attribute a e
