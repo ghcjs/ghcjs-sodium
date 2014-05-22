@@ -139,19 +139,19 @@ data Dir = LTR | RTL | Auto
 
 -- | Global attributes.
 data GlobalAttributes = GlobalAttributes
-    { _accessKey       :: Set Char
-    , _className       :: HashSet Text
-    , _contentEditable :: Maybe Bool
-    , _contextMenu     :: ElementId
-    , _dir             :: Maybe Dir
-    , _draggable       :: Maybe Bool
-    , _hidden          :: Bool
-    , _id_             :: ElementId
-    , _lang            :: Text
-    , _spellCheck      :: Maybe Bool
-    , _style           :: Style
-    , _tabIndex        :: Maybe Int
-    , _title           :: Text
+    { _accessKey       :: !(Set Char)
+    , _className       :: !(HashSet Text)
+    , _contentEditable :: !(Maybe Bool)
+    , _contextMenu     :: !ElementId
+    , _dir             :: !(Maybe Dir)
+    , _draggable       :: !(Maybe Bool)
+    , _hidden          :: !Bool
+    , _id_             :: !ElementId
+    , _lang            :: !Text
+    , _spellCheck      :: !(Maybe Bool)
+    , _style           :: !Style
+    , _tabIndex        :: !(Maybe Int)
+    , _title           :: !Text
     } deriving (Eq, Show, Generic)
 
 makeClassy ''GlobalAttributes
