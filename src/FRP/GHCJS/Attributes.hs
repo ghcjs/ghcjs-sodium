@@ -97,7 +97,6 @@ updateStyle a e l = do
     len <- cssStyleDeclarationGetLength decl
     toRemove <- fmap catMaybes . forM (upto len) $ \i -> do
         prop <- cssStyleDeclarationItem decl i
-        print prop
         return $ if HashMap.member prop obj then Nothing else Just prop
     forM_ toRemove $ \prop ->
         cssStyleDeclarationRemoveProperty decl prop :: IO JSString
