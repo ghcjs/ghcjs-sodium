@@ -10,7 +10,7 @@ module FRP.GHCJS.Types
     ) where
 
 import           Control.Lens.TH
-import           Data.Text
+import           Data.Text       (Text)
 import qualified GHCJS.DOM.Node  as DOM
 
 -- | A document element.

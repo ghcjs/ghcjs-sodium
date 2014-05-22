@@ -6,7 +6,7 @@ module FRP.GHCJS.Mount
 import           Control.Applicative
 import           Control.Lens        hiding (children)
 import           Control.Monad
-import           Data.Foldable
+import           Data.Foldable       (foldlM)
 import           FRP.Sodium
 import qualified GHCJS.DOM           as DOM
 import qualified GHCJS.DOM.Document  as DOM

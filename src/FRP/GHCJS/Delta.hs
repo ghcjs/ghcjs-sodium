@@ -19,7 +19,7 @@ module FRP.GHCJS.Delta
 
 import           Control.Applicative
 import           Control.Lens
-import           Data.Foldable
+import           Data.Foldable       (Foldable)
 
 -- | Two values, representing the old and new versions of data type. This is
 -- also the diagonal functor in @Hask@, the category of Haskell types.
@@ -78,7 +78,7 @@ diff = iso diff' patch
         go xs     []     = Delete <$> xs
         go (x:xs) (y:ys) = Both (Delta x y) : go xs ys
 
-    patch = Prelude.foldr go (Delta [] [])
+    patch = foldr go (Delta [] [])
       where
         go (Insert y) (Delta xs ys) = Delta xs (y:ys)
         go (Delete x) (Delta xs ys) = Delta (x:xs) ys
