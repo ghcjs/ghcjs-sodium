@@ -1,5 +1,5 @@
 -- | Mapping keys to multiple values.
-module FRP.GHCJS.MultiMap
+module Data.MultiMap
     ( MultiMap
       -- * Construction
     , empty

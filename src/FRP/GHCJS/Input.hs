@@ -14,7 +14,7 @@ import           Data.Monoid
 import           FRP.Sodium
 import           FRP.Sodium.Internal (ioReactive)
 
-import           FRP.GHCJS.StableRef
+import           Data.StableRef
 
 -- | An event handler.
 newtype Handler a = Handler (StableRef (a -> Reactive ()))

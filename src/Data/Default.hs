@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE TypeOperators     #-}
 -- | Default values, and a generic deriving mechanism.
-module FRP.GHCJS.Default
+module Data.Default
     ( Default(..)
     ) where
 

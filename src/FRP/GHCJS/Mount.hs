@@ -14,8 +14,8 @@ import           GHCJS.DOM
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
+import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
-import           FRP.GHCJS.IOState
 import           FRP.GHCJS.Types
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'

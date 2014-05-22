@@ -46,7 +46,7 @@ import           GHCJS.DOM.HTMLElement
 import           GHCJS.DOM.Node              
 import           GHCJS.DOM.Types               (maybeJSNull)
 
-import           FRP.GHCJS.Default
+import           Data.Default
 import           FRP.GHCJS.Types
 
 -- | DOM element attributes and properties.

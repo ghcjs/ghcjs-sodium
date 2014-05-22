@@ -21,7 +21,7 @@ import           Data.Text          (Text)
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
-import           FRP.GHCJS.IOState
+import           Control.Monad.IOState
 
 -- | A state monad for mounting.
 type Mount = IOState MountState

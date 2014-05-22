@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 -- | An IORef-based state monad.
-module FRP.GHCJS.IOState
+module Control.Monad.IOState
     ( IOState(..)
     ) where
 

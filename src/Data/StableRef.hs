@@ -1,5 +1,5 @@
 -- | Approximate equality.
-module FRP.GHCJS.StableRef
+module Data.StableRef
     ( StableRef
     , makeStableRef
     , deref
