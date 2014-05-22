@@ -1,16 +1,36 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE TemplateHaskell           #-}
 -- | HTML attributes and properties.
-module FRP.GHCJS.Attributes where
+module FRP.GHCJS.Attributes
+    ( Default(..)
+    , Attributes(..)
+      -- * Attributes
+    , GlobalAttributes
+    , accessKey
+    , className
+    , contentEditable
+    , contextMenu
+    , dir
+    , draggable
+    , hidden
+    , id_
+    , lang
+    , spellCheck
+    , style
+    , tabIndex
+    , title
+    ,
+    ) where
 
 import           Control.Lens
 import           Control.Monad
 import           Data.Foldable         as Foldable
 import           Data.HashSet
-import           Data.Text             as Text
 import           Data.Set
+import           Data.Text             as Text
 import           GHC.Generics          (Generic)
 import qualified GHCJS.DOM.Element     as DOM
 import qualified GHCJS.DOM.HTMLElement as DOM
@@ -33,36 +53,13 @@ attribute
     -> (b -> Maybe Text)
     -> IO ()
 attribute a e l attr f = case views l f a of
-    Nothing    -> DOM.elementRemoveAttribute e attr
-    Just value -> DOM.elementSetAttribute e attr value
+    Nothing  -> DOM.elementRemoveAttribute e attr
+    Just new -> do
+        old <- DOM.elementGetAttribute e attr
+        when (old /= new) $ DOM.elementSetAttribute e attr new
 
 -- | Set a property on an element.
 property
-    :: a
-    -> e
-    -> Getting b a c
-    -> (e -> b -> IO ())
-    -> (c -> b)
-    -> IO ()
-property a e l setProp f = setProp e (views l f a)
-
--- | Set a property on an element, and remove it by removing the attribute.
-hybridProperty
-    :: DOM.IsElement e
-    => a
-    -> e
-    -> Getting (Maybe b) a c
-    -> (e -> b -> IO ())
-    -> Text
-    -> (c -> Maybe b)
-    -> IO ()
-hybridProperty a e l setProp attr f = case views l f a of
-    Nothing    -> DOM.elementRemoveAttribute e attr
-    Just value -> setProp e value
-
--- | Set a property on an element if the value has not changed. Use this for
--- properties such as @value@ that have side-effects when set.
-safeProperty
     :: Eq b
     => a
     -> e
@@ -71,23 +68,23 @@ safeProperty
     -> (e -> b -> IO ())
     -> (c -> b)
     -> IO ()
-safeProperty a e l getProp setProp f = do
+property a e l getProp setProp f = do
     let new = views l f a
     old <- getProp e
     when (old /= new) $ setProp e new
 
--- | Convert a boolean attribute.
-boolean :: Text -> Bool -> Maybe Text
-boolean name b = if b then Just name else Nothing
-
--- | Convert a ternary attribute, which may be @true@, @false@, or a third
--- state.
-ternary :: Text -> Maybe Bool -> Text
-ternary third = maybe third (\b -> if b then "true" else "false")
-
 -- | Convert a non-empty text attribute.
 nonNull :: Text -> Maybe Text
 nonNull t = if Text.null t then Nothing else Just t
+
+-- | Convert a ternary attribute, which may be @true@, @false@, or a third
+-- default state.
+ternary :: Maybe Bool -> Maybe Text
+ternary = fmap (\b -> if b then "true" else "false")
+
+-- | Show a value as text.
+showText :: Show a => a -> Text
+showText = Text.pack . show
 
 -- | Separate the elements of a container with spaces.
 spaceSep :: Foldable f => (a -> Text) -> f a -> Text
@@ -112,9 +109,9 @@ data GlobalAttributes = GlobalAttributes
     , _dir             :: Maybe Dir
     , _draggable       :: Maybe Bool
     , _hidden          :: Bool
-    , __id             :: ElementId
+    , _id_             :: ElementId
     , _lang            :: Text
-    , _spellCheck      :: Bool
+    , _spellCheck      :: Maybe Bool
     , _style           :: Style
     , _tabIndex        :: Maybe Int
     , _title           :: Text
@@ -126,26 +123,26 @@ instance Default GlobalAttributes
 
 instance Attributes GlobalAttributes where
     applyAttributes a n = do
-        prop    accessKey       DOM.htmlElementSetAccessKey             (spaceSep Text.singleton)
-        prop    className       DOM.elementSetClassName                 (spaceSep id)
-        prop    contentEditable DOM.htmlElementSetContentEditable       (ternary "inherit")
-        attr    contextMenu     "contextmenu"                           nonNull
-        hybrid  dir             DOM.htmlElementSetDir "dir"             (fmap dirValue)
-        hybrid  draggable       DOM.htmlElementSetDraggable "draggable" id
-        attr    hidden          "hidden"                                (boolean "hidden")
-        prop    _id             DOM.elementSetId                        id
-        prop    lang            DOM.htmlElementSetLang                  id
-        prop    spellCheck      DOM.htmlElementSetSpellcheck            id
-        -- TODO: style
-        hybrid  tabIndex        DOM.htmlElementSetTabIndex "tabindex"   id
-        prop    title           DOM.htmlElementSetTitle                 id
-      where
-        e      = DOM.castToHTMLElement n
-        attr   = attribute a e
-        prop   = property a e
-        hybrid = hybridProperty a e
+        attr accessKey       "accessKey"       (nonNull . spaceSep Text.singleton)
+        attr contentEditable "contentEditable" ternary
+        attr contextMenu     "contextmenu"     nonNull
+        attr dir             "dir"             (fmap dirValue)
+        attr draggable       "draggable"       ternary
+        attr lang            "lang"            nonNull
+        attr spellCheck      "spellcheck"      ternary
+        attr tabIndex        "tabindex"        (fmap showText)
+        attr title           "title"           nonNull
 
-        dirValue :: Dir -> Text
+
+        prop className DOM.elementGetClassName  DOM.elementSetClassName  (spaceSep id)
+        prop hidden    DOM.htmlElementGetHidden DOM.htmlElementSetHidden id
+        prop id_       DOM.elementGetId         DOM.elementSetId         id
+        -- TODO: style
+      where
+        e    = DOM.castToHTMLElement n
+        attr = attribute a e
+        prop = property a e
+
         dirValue LTR  = "ltr"
         dirValue RTL  = "rtl"
         dirValue Auto = "auto"
