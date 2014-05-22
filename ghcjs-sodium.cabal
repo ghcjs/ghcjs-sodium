@@ -28,6 +28,7 @@ library
   build-depends:
     base,
     containers,
+    ghcjs-base,
     ghcjs-dom,
     lens,
     sodium,

@@ -24,18 +24,26 @@ module FRP.GHCJS.Attributes
     , title
     ) where
 
+import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
-import           Data.Foldable                 as Foldable
-import           Data.HashMap.Strict           as HashMap
-import           Data.HashSet
-import           Data.Set
-import           Data.Text                     as Text
+import           Data.Foldable                 (Foldable)
+import qualified Data.Foldable                 as Foldable
+import           Data.HashMap.Strict           (HashMap)
+import qualified Data.HashMap.Strict           as HashMap
+import           Data.HashSet                  (HashSet)
+import           Data.Maybe
+import           Data.Set                      (Set)
+import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
 import           GHC.Generics                  (Generic)
+import           GHCJS.Foreign                 (fromJSString)
+import           GHCJS.Types
 import qualified GHCJS.DOM.CSSStyleDeclaration as DOM
 import qualified GHCJS.DOM.Element             as DOM
 import qualified GHCJS.DOM.HTMLElement         as DOM
 import qualified GHCJS.DOM.Node                as DOM
+import           GHCJS.DOM.Types               (maybeJSNull)
 
 import           FRP.GHCJS.Default
 
@@ -82,11 +90,24 @@ updateStyle
     -> Getting Style a Style
     -> IO ()
 updateStyle a e l = do
+    let obj = a ^. l
     Just decl <- DOM.elementGetStyle e
-    Foldable.forM_ (HashMap.toList (a ^. l)) $ \(prop, new) -> do
-        -- TODO: this may return null
-        old <- DOM.cssStyleDeclarationGetPropertyValue decl prop
-        when (old /= new) $ DOM.cssStyleDeclarationSetProperty decl prop new ("" :: Text)
+    -- TODO: We get a little overzealous removing properties because we don't
+    -- check for shorthand properties.
+    len <- DOM.cssStyleDeclarationGetLength decl
+    toRemove <- fmap catMaybes . forM (upto len) $ \i -> do
+        prop <- DOM.cssStyleDeclarationItem decl i
+        print prop
+        return $ if HashMap.member prop obj then Nothing else Just prop
+    forM_ toRemove $ \prop ->
+        DOM.cssStyleDeclarationRemoveProperty decl prop :: IO JSString
+    forM_ (HashMap.toList obj) $ \(prop, new) -> do
+        old <- fmap fromJSString . maybeJSNull <$>
+            DOM.cssStyleDeclarationGetPropertyValue decl prop
+        when (old /= Just new) $
+            DOM.cssStyleDeclarationSetProperty decl prop new ("" :: JSString)
+  where
+    upto n = takeWhile (< n) [0..]
 
 -- | Convert a non-empty text attribute.
 nonNull :: Text -> Maybe Text
@@ -103,7 +124,7 @@ showText = Text.pack . show
 
 -- | Separate the elements of a container with spaces.
 spaceSep :: Foldable f => (a -> Text) -> f a -> Text
-spaceSep f = Text.intercalate " " . fmap f . Foldable.toList
+spaceSep f = Text.intercalate " " . map f . Foldable.toList
 
 -- | An element identifier.
 type ElementId = Text
