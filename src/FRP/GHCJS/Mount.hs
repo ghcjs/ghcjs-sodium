@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 -- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
     ( mount
@@ -14,10 +12,8 @@ import qualified GHCJS.DOM           as DOM
 import qualified GHCJS.DOM.Document  as DOM
 import qualified GHCJS.DOM.Node      as DOM
 
-import           FRP.GHCJS.Element
 import           FRP.GHCJS.Delta
-
-makePrisms ''Element
+import           FRP.GHCJS.Types
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.

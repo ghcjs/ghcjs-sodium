@@ -1,12 +1,17 @@
--- | DOM elements.
-module FRP.GHCJS.Element
+{-# LANGUAGE TemplateHaskell #-}
+-- | DOM types.
+module FRP.GHCJS.Types
     ( -- * Elements
       Element(..)
+    , _Extend
+    , _Tag
+    , _Text
     , Component(..)
     ) where
 
+import           Control.Lens.TH
 import           Data.Text
-import qualified GHCJS.DOM.Node as DOM
+import qualified GHCJS.DOM.Node  as DOM
 
 -- | A document element.
 data Element
@@ -30,3 +35,5 @@ data Component = Component
       -- | Delete the component, performing any cleanup.
     , destroy       :: DOM.Node -> IO ()
     }
+
+makePrisms ''Element
