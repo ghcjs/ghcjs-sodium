@@ -39,10 +39,10 @@ import qualified Data.Text                     as Text
 import           GHC.Generics                  (Generic)
 import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
-import qualified GHCJS.DOM.CSSStyleDeclaration as DOM
-import qualified GHCJS.DOM.Element             as DOM
-import qualified GHCJS.DOM.HTMLElement         as DOM
-import qualified GHCJS.DOM.Node                as DOM
+import           GHCJS.DOM.CSSStyleDeclaration
+import           GHCJS.DOM.Element           
+import           GHCJS.DOM.HTMLElement        
+import           GHCJS.DOM.Node              
 import           GHCJS.DOM.Types               (maybeJSNull)
 
 import           FRP.GHCJS.Default
@@ -50,11 +50,11 @@ import           FRP.GHCJS.Default
 -- | DOM element attributes and properties.
 class Default a => Attributes a where
     -- | Apply a set of attributes to a DOM node.
-    applyAttributes :: a -> DOM.Node -> IO ()
+    applyAttributes :: a -> Node -> IO ()
 
 -- | Set or remove an attribute from an element.
 attribute
-    :: DOM.IsElement e
+    :: IsElement e
     => a
     -> e
     -> Getting (Maybe Text) a b
@@ -62,10 +62,10 @@ attribute
     -> (b -> Maybe Text)
     -> IO ()
 attribute a e l attr f = case views l f a of
-    Nothing  -> DOM.elementRemoveAttribute e attr
+    Nothing  -> elementRemoveAttribute e attr
     Just new -> do
-        old <- DOM.elementGetAttribute e attr
-        when (old /= new) $ DOM.elementSetAttribute e attr new
+        old <- elementGetAttribute e attr
+        when (old /= new) $ elementSetAttribute e attr new
 
 -- | Set a property on an element.
 property
@@ -84,28 +84,28 @@ property a e l getProp setProp f = do
 
 -- | Update the style of an element.
 updateStyle
-    :: DOM.IsElement e
+    :: IsElement e
     => a
     -> e
     -> Getting Style a Style
     -> IO ()
 updateStyle a e l = do
     let obj = a ^. l
-    Just decl <- DOM.elementGetStyle e
+    Just decl <- elementGetStyle e
     -- TODO: We get a little overzealous removing properties because we don't
     -- check for shorthand properties.
-    len <- DOM.cssStyleDeclarationGetLength decl
+    len <- cssStyleDeclarationGetLength decl
     toRemove <- fmap catMaybes . forM (upto len) $ \i -> do
-        prop <- DOM.cssStyleDeclarationItem decl i
+        prop <- cssStyleDeclarationItem decl i
         print prop
         return $ if HashMap.member prop obj then Nothing else Just prop
     forM_ toRemove $ \prop ->
-        DOM.cssStyleDeclarationRemoveProperty decl prop :: IO JSString
+        cssStyleDeclarationRemoveProperty decl prop :: IO JSString
     forM_ (HashMap.toList obj) $ \(prop, new) -> do
         old <- fmap fromJSString . maybeJSNull <$>
-            DOM.cssStyleDeclarationGetPropertyValue decl prop
+            cssStyleDeclarationGetPropertyValue decl prop
         when (old /= Just new) $
-            DOM.cssStyleDeclarationSetProperty decl prop new ("" :: JSString)
+            cssStyleDeclarationSetProperty decl prop new ("" :: JSString)
   where
     upto n = takeWhile (< n) [0..]
 
@@ -169,13 +169,13 @@ instance Attributes GlobalAttributes where
         attr tabIndex        "tabindex"        (fmap showText)
         attr title           "title"           nonNull
 
-        prop className DOM.elementGetClassName  DOM.elementSetClassName  (spaceSep id)
-        prop hidden    DOM.htmlElementGetHidden DOM.htmlElementSetHidden id
-        prop id_       DOM.elementGetId         DOM.elementSetId         id
+        prop className elementGetClassName  elementSetClassName  (spaceSep id)
+        prop hidden    htmlElementGetHidden htmlElementSetHidden id
+        prop id_       elementGetId         elementSetId         id
 
         updateStyle a e style
       where
-        e    = DOM.castToHTMLElement n
+        e    = castToHTMLElement n
         attr = attribute a e
         prop = property a e
 
