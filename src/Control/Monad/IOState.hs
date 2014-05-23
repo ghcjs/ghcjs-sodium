@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 -- | An IORef-based state monad.
+-- TODO: MVar?
 module Control.Monad.IOState
     ( IOState(..)
     ) where
