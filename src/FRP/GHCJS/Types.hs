@@ -3,32 +3,28 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TemplateHaskell            #-}
 -- | DOM types.
-module FRP.GHCJS.Types
-    ( -- * Mounting
-      Mount
-    , MountState(..)
-    , document
-      -- * Elements
-    , Element(..)
-    , _Extend
-    , _Tag
-    , _Text
-    , Component(..)
-    ) where
+module FRP.GHCJS.Types where
 
 import           Control.Lens.TH
-import           Data.Text          (Text)
+import           Data.HashMap.Strict   (HashMap)
+import           Data.Text             (Text)
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
 import           Control.Monad.IOState
+import           FRP.GHCJS.Input
 
 -- | A state monad for mounting.
 type Mount = IOState MountState
 
+type NodeId = Int
+
 -- | The mount state.
 data MountState = MountState
     { _document :: !Document
+    , _nextId   :: !NodeId
+    , _nodes    :: !(HashMap NodeId Node)
+    , _handlers :: !(HashMap NodeId Inputs)
     }
 
 makeLenses ''MountState

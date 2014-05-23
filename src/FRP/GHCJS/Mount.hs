@@ -8,6 +8,7 @@ import           Control.Lens           hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Foldable          (foldlM)
+import qualified Data.HashMap.Strict    as HashMap
 import           Data.IORef
 import           FRP.Sodium
 import           GHCJS.DOM.Document
@@ -30,6 +31,9 @@ newMountState n = do
     Just d <- nodeGetOwnerDocument n
     return MountState
         { _document = d
+        , _nextId   = 0
+        , _nodes    = HashMap.empty
+        , _handlers = HashMap.empty
         }
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
