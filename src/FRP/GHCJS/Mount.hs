@@ -8,20 +8,21 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens              hiding (children)
+import           Control.Lens               hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
-import           Data.Foldable             (foldlM)
+import           Data.Foldable              (foldlM)
 import           Data.IORef
 import           FRP.Sodium
-import qualified GHCJS.DOM.Document        as DOM
-import qualified GHCJS.DOM.Element         as DOM
-import qualified GHCJS.DOM.Node            as DOM
-import           GHCJS.Types
+import qualified GHCJS.DOM.Document         as DOM
+import qualified GHCJS.DOM.Element          as DOM
+import qualified GHCJS.DOM.Node             as DOM
 
 import           Control.Monad.IOState
+import           Data.Default
 import           Data.Delta
+import           FRP.GHCJS.Dispatch
 import           FRP.GHCJS.Internal.Element
 
 -- | A state monad for mounting.
@@ -30,14 +31,16 @@ newtype Mount a = Mount (IOState MountState a)
 
 -- | The mount state.
 data MountState = MountState
-    { _document  :: !DOM.Document
-    , _nextName  :: !Name
+    { _document      :: !DOM.Document
+    , _mountDispatch :: !Dispatch
     }
 
--- | A node's unique identifier (for this library's purposes).
-type Name = Int
-
 makeLenses ''MountState
+
+instance HasDispatch MountState where
+    dispatch = mountDispatch
+
+instance Dispatches MountState Mount
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.
@@ -55,10 +58,10 @@ runMount (Mount m) = runIOState m
 mount :: DOM.IsNode e => e -> Behavior [Element] -> IO (IO ())
 mount parent b = do
     let n = DOM.toNode parent
-    Just d <- DOM.nodeGetOwnerDocument n
+    Just doc <- DOM.nodeGetOwnerDocument n
     ref <- newIORef MountState
-        { _document  = d
-        , _nextName  = 0
+        { _document      = doc
+        , _mountDispatch = def
         }
     sync $ do
         e <- deltas [] (value b)
@@ -126,17 +129,18 @@ updateChildren parent des = editChildren (des ^. diff)
 
 -- | Construct a concrete DOM node from an 'Element'.
 createElement :: Element -> Mount DOM.Node
-createElement (Extend c e) = do
+createElement (Extend c e)   = do
     n <- createElement e
     liftIO $ create c (DOM.castToElement n)
     return n
-createElement (Tag s _ cs)   = do
+createElement (Tag s evs cs) = do
     d <- use document
     Just e <- liftIO $ DOM.documentCreateElement d s
+    register e evs
     let n = DOM.toNode e
     updateChildren n (Delta [] cs)
     return n
-createElement (Text s)     = do
+createElement (Text s)       = do
     d <- use document
     Just t <- liftIO $ DOM.documentCreateTextNode d s
     return (DOM.toNode t)
@@ -146,18 +150,7 @@ destroyElement :: DOM.Node -> Element -> Mount ()
 destroyElement n (Extend c e) = do
     liftIO $ destroy c (DOM.castToElement n)
     destroyElement n e
-destroyElement n (Tag _ _ cs) = updateChildren n (Delta cs [])
+destroyElement n (Tag _ _ cs) = do
+    updateChildren n (Delta cs [])
+    unregister (DOM.castToElement n)
 destroyElement _ _            = return ()
-
--- | Get the name of an element.
-getName :: DOM.Element -> Mount Name
-getName e = do
-    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
-    if hasNameAttr
-        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
-        else do
-            name <- nextName <<+= 1
-            liftIO $ DOM.elementSetAttribute e nameAttr (show name)
-            return name
-  where
-    nameAttr = "data-ghcjs-sodium-id" :: JSString

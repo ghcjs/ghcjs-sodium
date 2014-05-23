@@ -25,6 +25,9 @@ instance Default Bool
 instance Default (Maybe a)
 instance Default [a]
 
+instance Default Int where
+    def = 0
+
 instance Default Text where
     def = Text.empty
 
