@@ -41,6 +41,7 @@ library
 
   exposed-modules:
     FRP.GHCJS.Attributes
+    FRP.GHCJS.Delta
     FRP.GHCJS.Element
     FRP.GHCJS.Input
     FRP.GHCJS.Mount
@@ -50,5 +51,3 @@ library
     Data.Default
     Data.MultiMap
     Data.StableRef
-    FRP.GHCJS.Delta
-    FRP.GHCJS.Types

@@ -18,7 +18,7 @@ import           Data.Text            (Text)
 import           Prelude              hiding (div, span)
 
 import           FRP.GHCJS.Attributes
-import           FRP.GHCJS.Types
+import           FRP.GHCJS.Mount
 
 -- | Extend an element with a 'Component'.
 extend :: Component -> Element -> Element

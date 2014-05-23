@@ -47,7 +47,6 @@ import           GHCJS.DOM.Node
 import           GHCJS.DOM.Types               (maybeJSNull)
 
 import           Data.Default
-import           FRP.GHCJS.Types
 
 -- | DOM element attributes and properties.
 class Default a => Attributes a where

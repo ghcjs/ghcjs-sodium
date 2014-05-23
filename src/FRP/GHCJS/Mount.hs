@@ -1,6 +1,13 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
 -- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
-    ( mount
+    ( -- * Elements
+      Element(..)
+    , Component(..)
+      -- * Mounting
+    , Mount
+    , mount
     ) where
 
 import           Control.Applicative
@@ -8,15 +15,58 @@ import           Control.Lens           hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Foldable          (foldlM)
+import           Data.HashMap.Strict    (HashMap)
 import qualified Data.HashMap.Strict    as HashMap
 import           Data.IORef
+import           Data.Text              (Text)
+import qualified Data.Text              as Text
 import           FRP.Sodium
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
 
 import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
-import           FRP.GHCJS.Types
+import           FRP.GHCJS.Input
+
+-- | A document element.
+data Element
+      -- | Extend an 'Element' with initialization and update operations.
+    = Extend Component Element
+      -- | A vanilla HTML tag.
+    | Tag !Text [Element]
+      -- | A text node.
+    | Text !Text
+
+-- | A logical component in the document.
+data Component = Component
+    { -- | A component name that uniquely identifies the type or class of
+      -- this component. 'update' and 'delete' may assume that the 'Node'
+      -- has been created by 'create' of the same component name.
+      componentName :: !Text
+      -- | Create the component.
+    , create        :: Node -> Mount ()
+      -- | Update an existing DOM node for this component.
+    , update        :: Node -> Mount ()
+      -- | Delete the component, performing any cleanup.
+    , destroy       :: Node -> Mount ()
+    }
+
+-- | A state monad for mounting.
+type Mount = IOState MountState
+
+-- | The mount state.
+data MountState = MountState
+    { _document :: !Document
+    , _nextId   :: !NodeId
+    , _nodes    :: !(HashMap NodeId Node)
+    , _handlers :: !(HashMap NodeId Inputs)
+    }
+
+-- | A node's unique identifier (for this library's purposes).
+type NodeId = Int
+
+makeLenses ''MountState
+makePrisms ''Element
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.
