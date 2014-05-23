@@ -18,8 +18,6 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
 import           Data.Foldable             (foldlM)
-import           Data.HashMap.Strict       (HashMap)
-import qualified Data.HashMap.Strict       as HashMap
 import           Data.IORef
 import           Data.Text                 (Text)
 import           FRP.Sodium
@@ -30,7 +28,6 @@ import           GHCJS.Types
 
 import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
-import           FRP.GHCJS.Input
 
 -- | A document element.
 data Element
@@ -63,8 +60,6 @@ newtype Mount a = Mount { runMount :: IOState MountState a }
 data MountState = MountState
     { _document :: !DOM.Document
     , _nextName :: !Name
-    , _elements :: !(HashMap Name DOM.Element)
-    , _handlers :: !(HashMap Name Inputs)
     }
 
 -- | A node's unique identifier (for this library's purposes).
@@ -72,12 +67,6 @@ type Name = Int
 
 makeLenses ''MountState
 makePrisms ''Element
-
--- | Read a value into a 'Maybe'.
-readMaybe :: Read a => String -> Maybe a
-readMaybe s = case reads s of
-    [(a,"")] -> Just a
-    _        -> Nothing
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.
@@ -93,8 +82,6 @@ newMountState n = do
     return MountState
         { _document = d
         , _nextName = 0
-        , _elements = HashMap.empty
-        , _handlers = HashMap.empty
         }
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
@@ -108,28 +95,18 @@ mount parent b = do
         e <- deltas [] (value b)
         listen e $ \des -> runIOState (runMount $ updateChildren n des) ref
 
--- | The attribute we use to mark nodes.
-nameAttribute :: JSString
-nameAttribute = "data-ghcjs-sodium-id"
-
--- | Mark a node with a unique ID.
-nameElement :: DOM.Element -> Mount ()
-nameElement e = do
-    name <- nextName <<+= 1
-    liftIO $ DOM.elementSetAttribute e nameAttribute (show name)
-    elements . at name ?= e
-
--- | Stop tracking an element.
-unnameElement :: DOM.Element -> Mount ()
-unnameElement e = do
-    name <- getName e
-    elements . at name .= Nothing
-
 -- | Get the name of an element.
 getName :: DOM.Element -> Mount Name
 getName e = do
-    Just name <- liftIO $ readMaybe <$> DOM.elementGetAttribute e nameAttribute
-    return name
+    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
+    if hasNameAttr
+        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
+        else do
+            name <- nextName <<+= 1
+            liftIO $ DOM.elementSetAttribute e nameAttr (show name)
+            return name
+  where
+    nameAttr = "data-ghcjs-sodium-id" :: JSString
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
@@ -200,7 +177,6 @@ createElement (Extend c e) = do
 createElement (Tag s cs)   = do
     d <- use document
     Just e <- liftIO $ DOM.documentCreateElement d s
-    nameElement e
     let n = DOM.toNode e
     updateChildren n (Delta [] cs)
     return n
@@ -214,7 +190,5 @@ destroyElement :: DOM.Node -> Element -> Mount ()
 destroyElement n (Extend c e) = do
     destroy c (DOM.castToElement n)
     destroyElement n e
-destroyElement n (Tag _ cs)   = do
-    unnameElement (DOM.castToElement n)
-    updateChildren n (Delta cs [])
+destroyElement n (Tag _ cs)   = updateChildren n (Delta cs [])
 destroyElement _ _            = return ()
