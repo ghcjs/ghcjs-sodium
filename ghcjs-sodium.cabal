@@ -28,6 +28,7 @@ library
   build-depends:
     base,
     containers,
+    contravariant,
     dlist,
     ghcjs-base,
     ghcjs-dom,

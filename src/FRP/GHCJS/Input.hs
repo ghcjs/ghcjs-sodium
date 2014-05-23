@@ -7,6 +7,7 @@ module FRP.GHCJS.Input
 
 import           Control.Applicative
 import           Control.Arrow
+import           Data.Functor.Contravariant
 import           Data.Monoid
 import           FRP.Sodium
 
@@ -21,6 +22,9 @@ instance Monoid (Input a) where
 
 instance Default (Input a) where
     def = mempty
+
+instance Contravariant Input where
+    contramap f (Input g) = Input (g . f)
 
 -- | Create a new input connected to an 'Event'.
 newInput :: Reactive (Event a, Input a)
