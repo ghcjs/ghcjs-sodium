@@ -62,9 +62,9 @@ newtype Mount a = Mount { runMount :: IOState MountState a }
 
 -- | The mount state.
 data MountState = MountState
-    { _document :: !DOM.Document
-    , _nextName :: !Name
-    , _inputs   :: !(HashMap Name Inputs)
+    { _document  :: !DOM.Document
+    , _nextName  :: !Name
+    , _inputsMap :: !(HashMap Name Inputs)
     }
 
 -- | A node's unique identifier (for this library's purposes).
@@ -85,9 +85,9 @@ newMountState :: DOM.Node -> IO MountState
 newMountState n = do
     Just d <- DOM.nodeGetOwnerDocument n
     return MountState
-        { _document = d
-        , _nextName = 0
-        , _inputs   = HashMap.empty
+        { _document  = d
+        , _nextName  = 0
+        , _inputsMap = HashMap.empty
         }
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
@@ -118,7 +118,7 @@ getName e = do
 updateInputs :: DOM.IsElement e => e -> Inputs -> Mount ()
 updateInputs e is = do
     name <- getName (DOM.toElement e)
-    inputs . at name ?= is
+    inputsMap . at name ?= is
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:

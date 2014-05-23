@@ -9,19 +9,7 @@ module FRP.GHCJS.Attributes
     , Attributes(..)
       -- * Attributes
     , GlobalAttributes
-    , accessKey
-    , className
-    , contentEditable
-    , contextMenu
-    , dir
-    , draggable
-    , hidden
-    , id_
-    , lang
-    , spellCheck
-    , style
-    , tabIndex
-    , title
+    , HasGlobalAttributes(..)
     ) where
 
 import           Control.Applicative
@@ -46,6 +34,7 @@ import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
 
 import           Data.Default
+import           FRP.GHCJS.Input
 import           FRP.GHCJS.Mount
 
 -- | DOM element attributes and properties.
@@ -54,7 +43,7 @@ class Default a => Attributes a where
     applyAttributes :: a -> DOM.Element -> Mount ()
 
 -- | Set or remove an attribute from an element.
-updateAttribute
+attribute
     :: DOM.IsElement e
     => a
     -> e
@@ -62,14 +51,14 @@ updateAttribute
     -> Text
     -> (b -> Maybe Text)
     -> Mount ()
-updateAttribute a e l attr f = liftIO $ case views l f a of
+attribute a e l attr f = liftIO $ case views l f a of
     Nothing  -> DOM.elementRemoveAttribute e attr
     Just new -> do
         old <- DOM.elementGetAttribute e attr
         when (old /= new) $ DOM.elementSetAttribute e attr new
 
 -- | Set a property on an element.
-updateProperty
+property
     :: Eq b
     => a
     -> e
@@ -78,20 +67,14 @@ updateProperty
     -> (e -> b -> IO ())
     -> (c -> b)
     -> Mount ()
-updateProperty a e l getProp setProp f = liftIO $ do
+property a e l getProp setProp f = liftIO $ do
     let new = views l f a
     old <- getProp e
     when (old /= new) $ setProp e new
 
 -- | Update the style of an element.
-updateStyle
-    :: DOM.IsElement e
-    => a
-    -> e
-    -> Getting Style a Style
-    -> Mount ()
-updateStyle a e l = liftIO $ do
-    let obj = a ^. l
+updateStyle :: DOM.IsElement e => e -> Style -> Mount ()
+updateStyle e obj = liftIO $ do
     Just decl <- DOM.elementGetStyle e
     -- TODO: We get a little overzealous removing properties because we don't
     -- check for shorthand properties.
@@ -151,11 +134,15 @@ data GlobalAttributes = GlobalAttributes
     , _style           :: !Style
     , _tabIndex        :: !(Maybe Int)
     , _title           :: !Text
-    } deriving (Eq, Show, Generic)
+    , _globalInputs    :: !Inputs
+    } deriving (Generic)
 
 makeClassy ''GlobalAttributes
 
 instance Default GlobalAttributes
+
+instance HasInputs GlobalAttributes where
+    inputs = globalInputs
 
 instance Attributes GlobalAttributes where
     applyAttributes a e = do
@@ -173,10 +160,12 @@ instance Attributes GlobalAttributes where
         prop hidden    DOM.htmlElementGetHidden DOM.htmlElementSetHidden id
         prop id_       DOM.elementGetId         DOM.elementSetId         id
 
-        updateStyle a e style
+        updateStyle e (a ^. style)
+
+        updateInputs e (a ^. inputs)
       where
-        attr = updateAttribute a e
-        prop = updateProperty a (DOM.castToHTMLElement e)
+        attr = attribute a e
+        prop = property a (DOM.castToHTMLElement e)
 
         dirValue LTR  = "ltr"
         dirValue RTL  = "rtl"

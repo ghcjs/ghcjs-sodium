@@ -8,8 +8,8 @@ module FRP.GHCJS.Input
       -- * Events
     , MouseEvent(..)
       -- * Inputs
-    , Inputs(..)
-    , click
+    , Inputs
+    , HasInputs(..)
     ) where
 
 import           Control.Applicative
@@ -45,4 +45,4 @@ data Inputs = Inputs
 
 instance Default Inputs
 
-makeLenses ''Inputs
+makeClassy ''Inputs
