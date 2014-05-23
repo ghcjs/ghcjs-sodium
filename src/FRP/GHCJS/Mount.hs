@@ -19,15 +19,16 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
 import           Data.Foldable             (foldlM)
+import           Data.HashMap.Strict       (HashMap)
+import qualified Data.HashMap.Strict       as HashMap
 import           Data.IORef
 import           Data.Text                 (Text)
 import           FRP.Sodium
 import qualified GHCJS.DOM.Document        as DOM
 import qualified GHCJS.DOM.Element         as DOM
+import qualified GHCJS.DOM.Event           as DOM
 import qualified GHCJS.DOM.Node            as DOM
 import           GHCJS.Types
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
 
 import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
@@ -57,7 +58,7 @@ data Component = Component
     }
 
 -- | A state monad for mounting.
-newtype Mount a = Mount { runMount :: IOState MountState a }
+newtype Mount a = Mount (IOState MountState a)
     deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
 
 -- | The mount state.
@@ -80,45 +81,24 @@ deltas z e = do
     b <- hold z e
     return $ snapshot (flip Delta) e b
 
--- | Create a new 'MountState' for a mount point.
-newMountState :: DOM.Node -> IO MountState
-newMountState n = do
-    Just d <- DOM.nodeGetOwnerDocument n
-    return MountState
-        { _document  = d
-        , _nextName  = 0
-        , _inputsMap = HashMap.empty
-        }
+-- | Run the 'Mount' monad.
+runMount :: Mount a -> IORef MountState -> IO a
+runMount (Mount m) = runIOState m
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
 -- The returned action will stop updating the DOM.
 mount :: DOM.IsNode e => e -> Behavior [Element] -> IO (IO ())
 mount parent b = do
     let n = DOM.toNode parent
-    s   <- newMountState n
-    ref <- newIORef s
+    Just d <- DOM.nodeGetOwnerDocument n
+    ref <- newIORef MountState
+        { _document  = d
+        , _nextName  = 0
+        , _inputsMap = HashMap.empty
+        }
     sync $ do
         e <- deltas [] (value b)
-        listen e $ \des -> runIOState (runMount $ updateChildren n des) ref
-
--- | Get the name of an element.
-getName :: DOM.Element -> Mount Name
-getName e = do
-    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
-    if hasNameAttr
-        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
-        else do
-            name <- nextName <<+= 1
-            liftIO $ DOM.elementSetAttribute e nameAttr (show name)
-            return name
-  where
-    nameAttr = "data-ghcjs-sodium-id" :: JSString
-
--- | Update the 'Inputs' for an 'DOM.Element'.
-updateInputs :: DOM.IsElement e => e -> Inputs -> Mount ()
-updateInputs e is = do
-    name <- getName (DOM.toElement e)
-    inputsMap . at name ?= is
+        listen e $ \des -> runMount (updateChildren n des) ref
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
@@ -204,3 +184,22 @@ destroyElement n (Extend c e) = do
     destroyElement n e
 destroyElement n (Tag _ cs)   = updateChildren n (Delta cs [])
 destroyElement _ _            = return ()
+
+-- | Get the name of an element.
+getName :: DOM.Element -> Mount Name
+getName e = do
+    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
+    if hasNameAttr
+        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
+        else do
+            name <- nextName <<+= 1
+            liftIO $ DOM.elementSetAttribute e nameAttr (show name)
+            return name
+  where
+    nameAttr = "data-ghcjs-sodium-id" :: JSString
+
+-- | Update the 'Inputs' for an 'DOM.Element'.
+updateInputs :: DOM.IsElement e => e -> Inputs -> Mount ()
+updateInputs e is = do
+    name <- getName (DOM.toElement e)
+    inputsMap . at name ?= is
