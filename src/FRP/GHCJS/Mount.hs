@@ -1,5 +1,6 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TemplateHaskell            #-}
 -- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
     ( -- * Elements
@@ -11,15 +12,16 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens           hiding (children)
+import           Control.Lens              hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           Data.Foldable          (foldlM)
-import           Data.HashMap.Strict    (HashMap)
-import qualified Data.HashMap.Strict    as HashMap
+import           Control.Monad.State.Class
+import           Data.Foldable             (foldlM)
+import           Data.HashMap.Strict       (HashMap)
+import qualified Data.HashMap.Strict       as HashMap
 import           Data.IORef
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
 import           FRP.Sodium
 import           GHCJS.DOM.Document
 import           GHCJS.DOM.Node
@@ -52,7 +54,8 @@ data Component = Component
     }
 
 -- | A state monad for mounting.
-type Mount = IOState MountState
+newtype Mount a = Mount { runMount :: IOState MountState a }
+    deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
 
 -- | The mount state.
 data MountState = MountState
@@ -95,7 +98,7 @@ mount parent b = do
     ref <- newIORef s
     sync $ do
         e <- deltas [] (value b)
-        listen e (\des -> runIOState (updateChildren n des) ref)
+        listen e $ \des -> runIOState (runMount $ updateChildren n des) ref
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
