@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
 -- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
@@ -12,7 +13,7 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens              hiding (children)
+import           Control.Lens              hiding (children, elements)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
@@ -21,10 +22,11 @@ import           Data.HashMap.Strict       (HashMap)
 import qualified Data.HashMap.Strict       as HashMap
 import           Data.IORef
 import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
 import           FRP.Sodium
-import           GHCJS.DOM.Document
-import           GHCJS.DOM.Node
+import qualified GHCJS.DOM.Document        as DOM
+import qualified GHCJS.DOM.Element         as DOM
+import qualified GHCJS.DOM.Node            as DOM
+import           GHCJS.Types
 
 import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
@@ -46,11 +48,11 @@ data Component = Component
       -- has been created by 'create' of the same component name.
       componentName :: !Text
       -- | Create the component.
-    , create        :: Node -> Mount ()
+    , create        :: DOM.Element -> Mount ()
       -- | Update an existing DOM node for this component.
-    , update        :: Node -> Mount ()
+    , update        :: DOM.Element -> Mount ()
       -- | Delete the component, performing any cleanup.
-    , destroy       :: Node -> Mount ()
+    , destroy       :: DOM.Element -> Mount ()
     }
 
 -- | A state monad for mounting.
@@ -59,17 +61,23 @@ newtype Mount a = Mount { runMount :: IOState MountState a }
 
 -- | The mount state.
 data MountState = MountState
-    { _document :: !Document
-    , _nextId   :: !NodeId
-    , _nodes    :: !(HashMap NodeId Node)
-    , _handlers :: !(HashMap NodeId Inputs)
+    { _document :: !DOM.Document
+    , _nextName :: !Name
+    , _elements :: !(HashMap Name DOM.Element)
+    , _handlers :: !(HashMap Name Inputs)
     }
 
 -- | A node's unique identifier (for this library's purposes).
-type NodeId = Int
+type Name = Int
 
 makeLenses ''MountState
 makePrisms ''Element
+
+-- | Read a value into a 'Maybe'.
+readMaybe :: Read a => String -> Maybe a
+readMaybe s = case reads s of
+    [(a,"")] -> Just a
+    _        -> Nothing
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.
@@ -79,26 +87,49 @@ deltas z e = do
     return $ snapshot (flip Delta) e b
 
 -- | Create a new 'MountState' for a mount point.
-newMountState :: Node -> IO MountState
+newMountState :: DOM.Node -> IO MountState
 newMountState n = do
-    Just d <- nodeGetOwnerDocument n
+    Just d <- DOM.nodeGetOwnerDocument n
     return MountState
         { _document = d
-        , _nextId   = 0
-        , _nodes    = HashMap.empty
+        , _nextName = 0
+        , _elements = HashMap.empty
         , _handlers = HashMap.empty
         }
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
 -- The returned action will stop updating the DOM.
-mount :: IsNode e => e -> Behavior [Element] -> IO (IO ())
+mount :: DOM.IsNode e => e -> Behavior [Element] -> IO (IO ())
 mount parent b = do
-    let n = toNode parent
+    let n = DOM.toNode parent
     s   <- newMountState n
     ref <- newIORef s
     sync $ do
         e <- deltas [] (value b)
         listen e $ \des -> runIOState (runMount $ updateChildren n des) ref
+
+-- | The attribute we use to mark nodes.
+nameAttribute :: JSString
+nameAttribute = "data-ghcjs-sodium-id"
+
+-- | Mark a node with a unique ID.
+nameElement :: DOM.Element -> Mount ()
+nameElement e = do
+    name <- nextName <<+= 1
+    liftIO $ DOM.elementSetAttribute e nameAttribute (show name)
+    elements . at name ?= e
+
+-- | Stop tracking an element.
+unnameElement :: DOM.Element -> Mount ()
+unnameElement e = do
+    name <- getName e
+    elements . at name .= Nothing
+
+-- | Get the name of an element.
+getName :: DOM.Element -> Mount Name
+getName e = do
+    Just name <- liftIO $ readMaybe <$> DOM.elementGetAttribute e nameAttribute
+    return name
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
@@ -108,12 +139,12 @@ mount parent b = do
 -- 3. This component is created/updated, inner components to outer ones.
 --
 -- When an element is destroyed, they are destroyed in the opposite order.
-updateElement :: Node -> Node -> Delta Element -> Mount ()
+updateElement :: DOM.Node -> DOM.Node -> Delta Element -> Mount ()
 updateElement parent n de = case patterns of
     Just m  -> m
     Nothing -> do
         n' <- createElement (newValue de)
-        void . liftIO $ nodeReplaceChild parent (Just n') (Just n)
+        void . liftIO $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
     patterns = updateComponent <$> de ^? match _Extend . equalOn (_1 . to componentName)
            <|> updateTag       <$> de ^? match _Tag . equalOn _1
@@ -121,66 +152,69 @@ updateElement parent n de = case patterns of
 
     updateComponent dt = do
         updateElement parent n (dt ^. slice _2)
-        update (dt ^. slice _1 . to newValue) n
+        update (dt ^. slice _1 . to newValue) (DOM.castToElement n)
 
     updateTag dt = dt ^! slice _2 . act (updateChildren n)
 
     updateText (Delta a b)
         | a == b    = return ()
-        | otherwise = liftIO $ nodeSetNodeValue n b
+        | otherwise = liftIO $ DOM.nodeSetNodeValue n b
 
 -- | Update a list of child 'Element's on a parent DOM 'Node'.
-updateChildren :: Node -> Delta [Element] -> Mount ()
+updateChildren :: DOM.Node -> Delta [Element] -> Mount ()
 updateChildren parent des = editChildren (des ^. diff)
   where
     editChildren edits = do
-        c <- liftIO $ nodeGetFirstChild parent
+        c <- liftIO $ DOM.nodeGetFirstChild parent
         void $ foldlM editChild c edits
 
     editChild c (Insert e) = do
         n <- createElement e
-        _ <- liftIO $ nodeInsertBefore parent (Just n) c
+        _ <- liftIO $ DOM.nodeInsertBefore parent (Just n) c
         return c
 
     editChild (Just c) (Delete e) = do
-        c' <- liftIO $ nodeGetNextSibling c
+        c' <- liftIO $ DOM.nodeGetNextSibling c
         destroyElement c e
-        _ <- liftIO $ nodeRemoveChild parent (Just c)
+        _ <- liftIO $ DOM.nodeRemoveChild parent (Just c)
         return c'
 
     editChild Nothing (Both de) = do
         n <- createElement (newValue de)
-        _ <- liftIO $ nodeAppendChild parent (Just n)
+        _ <- liftIO $ DOM.nodeAppendChild parent (Just n)
         return Nothing
 
     editChild (Just c) (Both de) = do
-        c' <- liftIO $ nodeGetNextSibling c
+        c' <- liftIO $ DOM.nodeGetNextSibling c
         updateElement parent c de
         return c'
 
     editChild _ _ = return Nothing
 
 -- | Construct a concrete DOM node from an 'Element'.
-createElement :: Element -> Mount Node
+createElement :: Element -> Mount DOM.Node
 createElement (Extend c e) = do
     n <- createElement e
-    create c n
+    create c (DOM.castToElement n)
     return n
 createElement (Tag s cs)   = do
     d <- use document
-    Just t <- liftIO $ documentCreateElement d s
-    let n = toNode t
+    Just e <- liftIO $ DOM.documentCreateElement d s
+    nameElement e
+    let n = DOM.toNode e
     updateChildren n (Delta [] cs)
     return n
 createElement (Text s)     = do
     d <- use document
-    Just t <- liftIO $ documentCreateTextNode d s
-    return (toNode t)
+    Just t <- liftIO $ DOM.documentCreateTextNode d s
+    return (DOM.toNode t)
 
 -- | Destroy an 'Element'.
-destroyElement :: Node -> Element -> Mount ()
+destroyElement :: DOM.Node -> Element -> Mount ()
 destroyElement n (Extend c e) = do
-    destroy c n
+    destroy c (DOM.castToElement n)
     destroyElement n e
-destroyElement n (Tag _ cs)   = updateChildren n (Delta cs [])
+destroyElement n (Tag _ cs)   = do
+    unnameElement (DOM.castToElement n)
+    updateChildren n (Delta cs [])
 destroyElement _ _            = return ()
