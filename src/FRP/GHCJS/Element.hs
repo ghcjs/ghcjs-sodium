@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module FRP.GHCJS.Element
     ( -- * Text
-      text
+      Element
+    , text
       -- * Grouping content
     , div
     , main
