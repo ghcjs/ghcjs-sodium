@@ -54,7 +54,7 @@ class Default a => Attributes a where
     applyAttributes :: a -> DOM.Element -> Mount ()
 
 -- | Set or remove an attribute from an element.
-attribute
+updateAttribute
     :: DOM.IsElement e
     => a
     -> e
@@ -62,14 +62,14 @@ attribute
     -> Text
     -> (b -> Maybe Text)
     -> Mount ()
-attribute a e l attr f = liftIO $ case views l f a of
+updateAttribute a e l attr f = liftIO $ case views l f a of
     Nothing  -> DOM.elementRemoveAttribute e attr
     Just new -> do
         old <- DOM.elementGetAttribute e attr
         when (old /= new) $ DOM.elementSetAttribute e attr new
 
 -- | Set a property on an element.
-property
+updateProperty
     :: Eq b
     => a
     -> e
@@ -78,7 +78,7 @@ property
     -> (e -> b -> IO ())
     -> (c -> b)
     -> Mount ()
-property a e l getProp setProp f = liftIO $ do
+updateProperty a e l getProp setProp f = liftIO $ do
     let new = views l f a
     old <- getProp e
     when (old /= new) $ setProp e new
@@ -175,8 +175,8 @@ instance Attributes GlobalAttributes where
 
         updateStyle a e style
       where
-        attr = attribute a e
-        prop = property a (DOM.castToHTMLElement e)
+        attr = updateAttribute a e
+        prop = updateProperty a (DOM.castToHTMLElement e)
 
         dirValue LTR  = "ltr"
         dirValue RTL  = "rtl"

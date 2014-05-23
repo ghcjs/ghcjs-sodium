@@ -10,10 +10,11 @@ module FRP.GHCJS.Mount
       -- * Mounting
     , Mount
     , mount
+    , updateInputs
     ) where
 
 import           Control.Applicative
-import           Control.Lens              hiding (children, elements)
+import           Control.Lens              hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
@@ -25,9 +26,12 @@ import qualified GHCJS.DOM.Document        as DOM
 import qualified GHCJS.DOM.Element         as DOM
 import qualified GHCJS.DOM.Node            as DOM
 import           GHCJS.Types
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
 
 import           Control.Monad.IOState
 import           FRP.GHCJS.Delta
+import           FRP.GHCJS.Input
 
 -- | A document element.
 data Element
@@ -60,6 +64,7 @@ newtype Mount a = Mount { runMount :: IOState MountState a }
 data MountState = MountState
     { _document :: !DOM.Document
     , _nextName :: !Name
+    , _inputs   :: !(HashMap Name Inputs)
     }
 
 -- | A node's unique identifier (for this library's purposes).
@@ -82,6 +87,7 @@ newMountState n = do
     return MountState
         { _document = d
         , _nextName = 0
+        , _inputs   = HashMap.empty
         }
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
@@ -107,6 +113,12 @@ getName e = do
             return name
   where
     nameAttr = "data-ghcjs-sodium-id" :: JSString
+
+-- | Update the 'Inputs' for an 'DOM.Element'.
+updateInputs :: DOM.IsElement e => e -> Inputs -> Mount ()
+updateInputs e is = do
+    name <- getName (DOM.toElement e)
+    inputs . at name ?= is
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
