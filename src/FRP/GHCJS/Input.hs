@@ -1,32 +1,48 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
--- | Event handlers.
+{-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE TemplateHaskell #-}
+-- | Events.
 module FRP.GHCJS.Input
-    ( Handler(..)
-    , Input(..)
+    ( -- * Input
+      Input(..)
     , newInput
+      -- * Events
+    , MouseEvent(..)
+      -- * Inputs
+    , Inputs(..)
+    , click
     ) where
 
 import           Control.Applicative
-import           Data.DList          (DList)
-import qualified Data.DList          as DList
-import           Data.Hashable
+import           Control.Arrow
+import           Control.Lens.TH
 import           Data.Monoid
 import           FRP.Sodium
-import           FRP.Sodium.Internal (ioReactive)
+import           GHC.Generics
 
-import           Data.StableRef
-
--- | An event handler.
-newtype Handler a = Handler (StableRef (a -> Reactive ()))
-    deriving (Eq, Hashable)
+import           Data.Default
 
 -- | An input into the event graph.
-newtype Input a = Input (DList (Handler a))
-    deriving (Monoid)
+newtype Input a = Input (a -> Reactive ())
 
--- | Create a new 'Input', linked to an 'Event'.
+instance Monoid (Input a) where
+    mempty = Input $ \_ -> return ()
+    mappend (Input f) (Input g) = Input $ \a -> f a >> g a
+
+instance Default (Input a) where
+    def = mempty
+
+-- | Create a new input connected to an 'Event'.
 newInput :: Reactive (Event a, Input a)
-newInput = do
-    (e, push) <- newEvent
-    handler <- ioReactive $ Handler <$> makeStableRef push
-    return (e, Input (DList.singleton handler))
+newInput = second Input <$> newEvent
+
+-- | A mouse event.
+data MouseEvent = MouseEvent
+
+-- | A set of event handlers for an element.
+data Inputs = Inputs
+    { _click :: Input MouseEvent
+    } deriving (Generic)
+
+instance Default Inputs
+
+makeLenses ''Inputs
