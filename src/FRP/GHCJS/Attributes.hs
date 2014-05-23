@@ -62,8 +62,8 @@ attribute
     -> Getting (Maybe Text) a b
     -> Text
     -> (b -> Maybe Text)
-    -> IO ()
-attribute a e l attr f = case views l f a of
+    -> Mount ()
+attribute a e l attr f = liftIO $ case views l f a of
     Nothing  -> elementRemoveAttribute e attr
     Just new -> do
         old <- elementGetAttribute e attr
@@ -78,8 +78,8 @@ property
     -> (e -> IO b)
     -> (e -> b -> IO ())
     -> (c -> b)
-    -> IO ()
-property a e l getProp setProp f = do
+    -> Mount ()
+property a e l getProp setProp f = liftIO $ do
     let new = views l f a
     old <- getProp e
     when (old /= new) $ setProp e new
@@ -90,8 +90,8 @@ updateStyle
     => a
     -> e
     -> Getting Style a Style
-    -> IO ()
-updateStyle a e l = do
+    -> Mount ()
+updateStyle a e l = liftIO $ do
     let obj = a ^. l
     Just decl <- elementGetStyle e
     -- TODO: We get a little overzealous removing properties because we don't
@@ -159,7 +159,7 @@ makeClassy ''GlobalAttributes
 instance Default GlobalAttributes
 
 instance Attributes GlobalAttributes where
-    applyAttributes a n = liftIO $ do
+    applyAttributes a n = do
         attr accessKey       "accessKey"       (nonNull . spaceSep Text.singleton)
         attr contentEditable "contentEditable" ternary
         attr contextMenu     "contextmenu"     nonNull
