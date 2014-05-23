@@ -38,24 +38,24 @@ import           Data.Set                      (Set)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import           GHC.Generics                  (Generic)
+import qualified GHCJS.DOM.CSSStyleDeclaration as DOM
+import qualified GHCJS.DOM.Element             as DOM
+import qualified GHCJS.DOM.HTMLElement         as DOM
+import           GHCJS.DOM.Types               (maybeJSNull)
 import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
-import           GHCJS.DOM.CSSStyleDeclaration
-import           GHCJS.DOM.Element           
-import           GHCJS.DOM.HTMLElement        
-import           GHCJS.DOM.Node              
-import           GHCJS.DOM.Types               (maybeJSNull)
 
 import           Data.Default
+import           FRP.GHCJS.Mount
 
 -- | DOM element attributes and properties.
 class Default a => Attributes a where
     -- | Apply a set of attributes to a DOM node.
-    applyAttributes :: a -> Node -> Mount ()
+    applyAttributes :: a -> DOM.Element -> Mount ()
 
 -- | Set or remove an attribute from an element.
 attribute
-    :: IsElement e
+    :: DOM.IsElement e
     => a
     -> e
     -> Getting (Maybe Text) a b
@@ -63,10 +63,10 @@ attribute
     -> (b -> Maybe Text)
     -> Mount ()
 attribute a e l attr f = liftIO $ case views l f a of
-    Nothing  -> elementRemoveAttribute e attr
+    Nothing  -> DOM.elementRemoveAttribute e attr
     Just new -> do
-        old <- elementGetAttribute e attr
-        when (old /= new) $ elementSetAttribute e attr new
+        old <- DOM.elementGetAttribute e attr
+        when (old /= new) $ DOM.elementSetAttribute e attr new
 
 -- | Set a property on an element.
 property
@@ -85,27 +85,27 @@ property a e l getProp setProp f = liftIO $ do
 
 -- | Update the style of an element.
 updateStyle
-    :: IsElement e
+    :: DOM.IsElement e
     => a
     -> e
     -> Getting Style a Style
     -> Mount ()
 updateStyle a e l = liftIO $ do
     let obj = a ^. l
-    Just decl <- elementGetStyle e
+    Just decl <- DOM.elementGetStyle e
     -- TODO: We get a little overzealous removing properties because we don't
     -- check for shorthand properties.
-    len <- cssStyleDeclarationGetLength decl
+    len <- DOM.cssStyleDeclarationGetLength decl
     toRemove <- fmap catMaybes . forM (upto len) $ \i -> do
-        prop <- cssStyleDeclarationItem decl i
+        prop <- DOM.cssStyleDeclarationItem decl i
         return $ if HashMap.member prop obj then Nothing else Just prop
     forM_ toRemove $ \prop ->
-        cssStyleDeclarationRemoveProperty decl prop :: IO JSString
+        DOM.cssStyleDeclarationRemoveProperty decl prop :: IO JSString
     forM_ (HashMap.toList obj) $ \(prop, new) -> do
         old <- fmap fromJSString . maybeJSNull <$>
-            cssStyleDeclarationGetPropertyValue decl prop
+            DOM.cssStyleDeclarationGetPropertyValue decl prop
         when (old /= Just new) $
-            cssStyleDeclarationSetProperty decl prop new ("" :: JSString)
+            DOM.cssStyleDeclarationSetProperty decl prop new ("" :: JSString)
   where
     upto n = takeWhile (< n) [0..]
 
@@ -158,7 +158,7 @@ makeClassy ''GlobalAttributes
 instance Default GlobalAttributes
 
 instance Attributes GlobalAttributes where
-    applyAttributes a n = do
+    applyAttributes a e = do
         attr accessKey       "accessKey"       (nonNull . spaceSep Text.singleton)
         attr contentEditable "contentEditable" ternary
         attr contextMenu     "contextmenu"     nonNull
@@ -169,15 +169,14 @@ instance Attributes GlobalAttributes where
         attr tabIndex        "tabindex"        (fmap showText)
         attr title           "title"           nonNull
 
-        prop className elementGetClassName  elementSetClassName  (spaceSep id)
-        prop hidden    htmlElementGetHidden htmlElementSetHidden id
-        prop id_       elementGetId         elementSetId         id
+        prop className DOM.elementGetClassName  DOM.elementSetClassName  (spaceSep id)
+        prop hidden    DOM.htmlElementGetHidden DOM.htmlElementSetHidden id
+        prop id_       DOM.elementGetId         DOM.elementSetId         id
 
         updateStyle a e style
       where
-        e    = castToHTMLElement n
         attr = attribute a e
-        prop = property a e
+        prop = property a (DOM.castToHTMLElement e)
 
         dirValue LTR  = "ltr"
         dirValue RTL  = "rtl"
