@@ -1,12 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module FRP.GHCJS.Element
-    ( -- * Elements
-      Element
-      -- * Components
-    , Component(..)
-    , extend
-      -- * Text
-    , text
+    ( -- * Text
+      text
       -- * Grouping content
     , div
     , main
@@ -14,15 +9,14 @@ module FRP.GHCJS.Element
     , span
     ) where
 
-import           Data.Text            (Text)
-import           Prelude              hiding (div, span)
+import           Control.Lens
+import           Data.Text                     (Text)
+import           Prelude                       hiding (div, span)
 
 import           FRP.GHCJS.Attributes
-import           FRP.GHCJS.Mount
-
--- | Extend an element with a 'Component'.
-extend :: Component -> Element -> Element
-extend = Extend
+import           FRP.GHCJS.Events
+import           FRP.GHCJS.Internal.Attributes
+import           FRP.GHCJS.Internal.Element
 
 -- | Create a text node.
 text :: Text -> Element
@@ -30,7 +24,7 @@ text = Text
 
 -- | Create a tag with attributes.
 tag :: Attributes a => Text -> a -> [Element] -> Element
-tag name attrs = Extend component . Tag name
+tag name attrs = Extend component . Tag name (attrs ^. events)
   where
     component = Component
         { componentName = name

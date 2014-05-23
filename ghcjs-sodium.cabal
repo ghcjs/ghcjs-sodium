@@ -41,11 +41,14 @@ library
 
   exposed-modules:
     FRP.GHCJS.Attributes
-    FRP.GHCJS.Delta
     FRP.GHCJS.Element
-    FRP.GHCJS.Input
+    FRP.GHCJS.Events
     FRP.GHCJS.Mount
 
   other-modules:
+    FRP.GHCJS.Input
+    FRP.GHCJS.Internal.Attributes
+    FRP.GHCJS.Internal.Element
     Control.Monad.IOState
     Data.Default
+    Data.Delta

@@ -4,13 +4,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 -- | Mounting 'Element's on external DOM elements.
 module FRP.GHCJS.Mount
-    ( -- * Elements
-      Element(..)
-    , Component(..)
-      -- * Mounting
-    , Mount
-    , mount
-    , updateInputs
+    ( mount
     ) where
 
 import           Control.Applicative
@@ -19,43 +13,16 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
 import           Data.Foldable             (foldlM)
-import           Data.HashMap.Strict       (HashMap)
-import qualified Data.HashMap.Strict       as HashMap
 import           Data.IORef
-import           Data.Text                 (Text)
 import           FRP.Sodium
 import qualified GHCJS.DOM.Document        as DOM
 import qualified GHCJS.DOM.Element         as DOM
-import qualified GHCJS.DOM.Event           as DOM
 import qualified GHCJS.DOM.Node            as DOM
 import           GHCJS.Types
 
 import           Control.Monad.IOState
-import           FRP.GHCJS.Delta
-import           FRP.GHCJS.Input
-
--- | A document element.
-data Element
-      -- | Extend an 'Element' with initialization and update operations.
-    = Extend Component Element
-      -- | A vanilla HTML tag.
-    | Tag !Text [Element]
-      -- | A text node.
-    | Text !Text
-
--- | A logical component in the document.
-data Component = Component
-    { -- | A component name that uniquely identifies the type or class of
-      -- this component. 'update' and 'delete' may assume that the 'Node'
-      -- has been created by 'create' of the same component name.
-      componentName :: !Text
-      -- | Create the component.
-    , create        :: DOM.Element -> Mount ()
-      -- | Update an existing DOM node for this component.
-    , update        :: DOM.Element -> Mount ()
-      -- | Delete the component, performing any cleanup.
-    , destroy       :: DOM.Element -> Mount ()
-    }
+import           Data.Delta
+import           FRP.GHCJS.Internal.Element
 
 -- | A state monad for mounting.
 newtype Mount a = Mount (IOState MountState a)
@@ -65,14 +32,12 @@ newtype Mount a = Mount (IOState MountState a)
 data MountState = MountState
     { _document  :: !DOM.Document
     , _nextName  :: !Name
-    , _inputsMap :: !(HashMap Name Inputs)
     }
 
 -- | A node's unique identifier (for this library's purposes).
 type Name = Int
 
 makeLenses ''MountState
-makePrisms ''Element
 
 -- | Given a starting value, bundle the old and new values into a 'Delta'
 -- when the 'Event' fires.
@@ -94,7 +59,6 @@ mount parent b = do
     ref <- newIORef MountState
         { _document  = d
         , _nextName  = 0
-        , _inputsMap = HashMap.empty
         }
     sync $ do
         e <- deltas [] (value b)
@@ -121,9 +85,9 @@ updateElement parent n de = case patterns of
 
     updateComponent dt = do
         updateElement parent n (dt ^. slice _2)
-        update (dt ^. slice _1 . to newValue) (DOM.castToElement n)
+        liftIO $ update (dt ^. slice _1 . to newValue) (DOM.castToElement n)
 
-    updateTag dt = dt ^! slice _2 . act (updateChildren n)
+    updateTag dt = dt ^! slice _3 . act (updateChildren n)
 
     updateText (Delta a b)
         | a == b    = return ()
@@ -164,9 +128,9 @@ updateChildren parent des = editChildren (des ^. diff)
 createElement :: Element -> Mount DOM.Node
 createElement (Extend c e) = do
     n <- createElement e
-    create c (DOM.castToElement n)
+    liftIO $ create c (DOM.castToElement n)
     return n
-createElement (Tag s cs)   = do
+createElement (Tag s _ cs)   = do
     d <- use document
     Just e <- liftIO $ DOM.documentCreateElement d s
     let n = DOM.toNode e
@@ -180,9 +144,9 @@ createElement (Text s)     = do
 -- | Destroy an 'Element'.
 destroyElement :: DOM.Node -> Element -> Mount ()
 destroyElement n (Extend c e) = do
-    destroy c (DOM.castToElement n)
+    liftIO $ destroy c (DOM.castToElement n)
     destroyElement n e
-destroyElement n (Tag _ cs)   = updateChildren n (Delta cs [])
+destroyElement n (Tag _ _ cs) = updateChildren n (Delta cs [])
 destroyElement _ _            = return ()
 
 -- | Get the name of an element.
@@ -197,9 +161,3 @@ getName e = do
             return name
   where
     nameAttr = "data-ghcjs-sodium-id" :: JSString
-
--- | Update the 'Inputs' for an 'DOM.Element'.
-updateInputs :: DOM.IsElement e => e -> Inputs -> Mount ()
-updateInputs e is = do
-    name <- getName (DOM.toElement e)
-    inputsMap . at name ?= is
