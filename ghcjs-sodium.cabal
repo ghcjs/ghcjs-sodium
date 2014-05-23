@@ -49,5 +49,3 @@ library
   other-modules:
     Control.Monad.IOState
     Data.Default
-    Data.MultiMap
-    Data.StableRef
