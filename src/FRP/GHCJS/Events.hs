@@ -3,8 +3,10 @@
 {-# LANGUAGE TemplateHaskell       #-}
 -- | Events.
 module FRP.GHCJS.Events
-    ( Events
+    ( -- * Events
+      Events
     , HasEvents(..)
+      -- * Mouse events
     , MouseEvent
     , HasMouseEvent(..)
     , Button(..)
@@ -24,12 +26,15 @@ import           Data.Default
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Events
 
+-- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
+-- | A mouse modifier key.
 data Modifier = Alt | Ctrl | Meta | Shift
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
+-- | Coordinate positions.
 data Position = Position !Int !Int
     deriving (Eq, Ord, Read, Show, Generic)
 
