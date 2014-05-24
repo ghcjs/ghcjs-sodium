@@ -24,7 +24,7 @@ text :: Text -> Element
 text = Text
 
 -- | Create a tag with attributes.
-tag :: Attributes a => Text -> a -> [Element] -> Element
+tag :: (Attributes a, HasEvents a) => Text -> a -> [Element] -> Element
 tag name attrs = Extend component . Tag name (attrs ^. events)
   where
     component = Component
