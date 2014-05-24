@@ -47,9 +47,9 @@ library
     FRP.GHCJS.Mount
 
   other-modules:
-    FRP.GHCJS.Dispatch
     FRP.GHCJS.Internal.Attributes
     FRP.GHCJS.Internal.Element
+    FRP.GHCJS.Internal.Events
     Control.Monad.IOState
     Data.Default
     Data.Delta

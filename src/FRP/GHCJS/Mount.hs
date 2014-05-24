@@ -13,6 +13,8 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
 import           Data.Foldable                 (foldlM)
+import           Data.HashMap.Strict           (HashMap)
+import qualified Data.HashMap.Strict           as HashMap
 import           Data.IORef
 import           Data.Text                     (Text)
 import qualified GHCJS.DOM.Document            as DOM
@@ -22,28 +24,26 @@ import qualified GHCJS.DOM.EventTargetClosures as DOM
 import qualified GHCJS.DOM.Node                as DOM
 
 import           Control.Monad.IOState
-import           Data.Default
 import           Data.Delta
-import           FRP.GHCJS.Dispatch
+import qualified FRP.GHCJS.Events              as E
 import           FRP.GHCJS.Internal.Element
 
--- | A state monad for mounting.
-newtype Mount a = Mount (IOState MountState a)
-    deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
+-- | A node's unique identifier (for this library's purposes).
+type Name = Int
 
 -- | The mount state.
 data MountState = MountState
-    { _document      :: !DOM.Document
-    , _model         :: [Element]
-    , _mountDispatch :: !Dispatch
+    { _document :: !DOM.Document
+    , _model    :: [Element]
+    , _nextName :: !Name
+    , _eventMap :: !(HashMap Name E.Events)
     }
 
 makeLenses ''MountState
 
-instance HasDispatch MountState where
-    dispatch = mountDispatch
-
-instance Dispatches MountState Mount
+-- | A state monad for mounting.
+newtype Mount a = Mount (IOState MountState a)
+    deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
 
 -- | Run the 'Mount' monad.
 runMount :: Mount a -> IORef MountState -> IO a
@@ -56,20 +56,48 @@ mount parent = do
     let n = DOM.toNode parent
     Just doc <- DOM.nodeGetOwnerDocument n
     ref <- newIORef MountState
-        { _document      = doc
-        , _model         = []
-        , _mountDispatch = def
+        { _document = doc
+        , _model    = []
+        , _nextName = 0
+        , _eventMap = HashMap.empty
         }
-    trapEvents doc $ \evType ev ->
-        runMount (dispatchEvent evType ev) ref
     return $ \es -> runMount (updateModel n es) ref
 
--- | Trap events at the document level, and call the callback when an event
--- occurs.
--- TODO: shims for browser differences
-trapEvents :: DOM.Document -> (Text -> DOM.Event -> IO ()) -> IO ()
-trapEvents doc f = forM_ eventNames $ \name ->
-    DOM.eventTargetAddEventListener doc name False (\_ -> f name)
+-- | Get the conanical name of an element.
+getName :: DOM.Element -> Mount Name
+getName e = do
+    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
+    if hasNameAttr
+        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
+        else do
+            name <- nextName <<+= 1
+            liftIO $ DOM.elementSetAttribute e nameAttr (show name)
+            return name
+  where
+    nameAttr = "data-ghcjs-sodium-id" :: Text
+
+-- | Register a set of event handlers for an element, overwriting any
+-- previous handlers.
+register :: DOM.Element -> E.Events -> Mount ()
+register e evs = do
+    name <- getName e
+    eventMap . at name ?= evs
+
+-- | Unregister an element.
+unregister :: DOM.Element -> Mount ()
+unregister e = do
+    name <- getName e
+    eventMap . at name .= Nothing
+
+-- | Dispatch a 'DOM.Event' to the appropriate element.
+dispatchEvent :: (E.Events -> DOM.Event -> IO ()) -> DOM.Event -> Mount ()
+dispatchEvent f ev = do
+    Just target <- liftIO $ DOM.eventGetTarget ev
+    name <- getName (DOM.castToElement target)
+    r <- use (eventMap . at name)
+    case r of
+        Nothing -> return ()
+        Just es -> liftIO $ f es ev
 
 -- | Update the model and the DOM tree.
 updateModel :: DOM.Node -> [Element] -> Mount ()
