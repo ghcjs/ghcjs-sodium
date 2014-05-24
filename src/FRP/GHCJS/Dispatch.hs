@@ -21,7 +21,6 @@ import           Control.Monad.Trans.Maybe
 import           Data.HashMap.Strict       (HashMap)
 import qualified Data.HashMap.Strict       as HashMap
 import           Data.Text                 (Text)
-import           FRP.Sodium                (sync)
 import           GHC.Generics
 import qualified GHCJS.DOM.Element         as DOM
 import qualified GHCJS.DOM.Event           as DOM
@@ -92,7 +91,7 @@ select
     -> IO ()
 select l a ev = do
     e <- extractEvent ev
-    sync $ fire (a ^. l) e
+    fire (a ^. l) e
 
 -- | Event selectors.
 selectors :: HashMap Text (E.Events -> DOM.Event -> IO ())

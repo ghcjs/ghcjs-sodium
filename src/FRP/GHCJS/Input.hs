@@ -2,19 +2,15 @@
 module FRP.GHCJS.Input
     ( -- * Input
       Input(..)
-    , newInput
     ) where
 
-import           Control.Applicative
-import           Control.Arrow
 import           Data.Functor.Contravariant
 import           Data.Monoid
-import           FRP.Sodium
 
 import           Data.Default
 
 -- | An input into the event graph.
-newtype Input a = Input { fire :: a -> Reactive () }
+newtype Input a = Input { fire :: a -> IO () }
 
 instance Monoid (Input a) where
     mempty = Input $ \_ -> return ()
@@ -25,7 +21,3 @@ instance Default (Input a) where
 
 instance Contravariant Input where
     contramap f (Input g) = Input (g . f)
-
--- | Create a new input connected to an 'Event'.
-newInput :: Reactive (Event a, Input a)
-newInput = second Input <$> newEvent

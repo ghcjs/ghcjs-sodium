@@ -15,7 +15,6 @@ import           Control.Monad.State.Class
 import           Data.Foldable                 (foldlM)
 import           Data.IORef
 import           Data.Text                     (Text)
-import           FRP.Sodium
 import qualified GHCJS.DOM.Document            as DOM
 import qualified GHCJS.DOM.Element             as DOM
 import qualified GHCJS.DOM.Event               as DOM
@@ -35,6 +34,7 @@ newtype Mount a = Mount (IOState MountState a)
 -- | The mount state.
 data MountState = MountState
     { _document      :: !DOM.Document
+    , _model         :: [Element]
     , _mountDispatch :: !Dispatch
     }
 
@@ -45,40 +45,37 @@ instance HasDispatch MountState where
 
 instance Dispatches MountState Mount
 
--- | Given a starting value, bundle the old and new values into a 'Delta'
--- when the 'Event' fires.
-deltas :: a -> Event a -> Reactive (Event (Delta a))
-deltas z e = do
-    b <- hold z e
-    return $ snapshot (flip Delta) e b
-
 -- | Run the 'Mount' monad.
 runMount :: Mount a -> IORef MountState -> IO a
 runMount (Mount m) = runIOState m
 
--- | Mount a dynamic list of 'Element's as children of a DOM 'Node'.
--- The returned action will stop updating the DOM.
-mount :: DOM.IsNode e => e -> Behavior [Element] -> IO (IO ())
-mount parent b = do
+-- | Mount a dynamic list of 'Element's as children of a DOM 'Node'. The
+-- returned function can be used to push updates to the document.
+mount :: DOM.IsNode e => e -> IO ([Element] -> IO ())
+mount parent = do
     let n = DOM.toNode parent
     Just doc <- DOM.nodeGetOwnerDocument n
     ref <- newIORef MountState
         { _document      = doc
+        , _model         = []
         , _mountDispatch = def
         }
-    untrap <- trapEvents doc $ \evType ev ->
+    trapEvents doc $ \evType ev ->
         runMount (dispatchEvent evType ev) ref
-    unlisten <- sync $ do
-        e <- deltas [] (value b)
-        listen e $ \des -> runMount (updateChildren n des) ref
-    return $ unlisten >> untrap
+    return $ \es -> runMount (updateModel n es) ref
 
 -- | Trap events at the document level, and call the callback when an event
 -- occurs.
 -- TODO: shims for browser differences
-trapEvents :: DOM.Document -> (Text -> DOM.Event -> IO ()) -> IO (IO ())
-trapEvents doc f = fmap sequence_ . forM eventNames $ \name ->
+trapEvents :: DOM.Document -> (Text -> DOM.Event -> IO ()) -> IO ()
+trapEvents doc f = forM_ eventNames $ \name ->
     DOM.eventTargetAddEventListener doc name False (\_ -> f name)
+
+-- | Update the model and the DOM tree.
+updateModel :: DOM.Node -> [Element] -> Mount ()
+updateModel n new = do
+    old <- model <<.= new
+    updateChildren n (Delta old new)
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
