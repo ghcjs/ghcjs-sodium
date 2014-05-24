@@ -9,6 +9,7 @@ module FRP.GHCJS.Dispatch
     , register
     , unregister
     , dispatchEvent
+    , eventNames
     ) where
 
 import           Control.Applicative
@@ -73,7 +74,7 @@ unregister e = do
     name <- getName e
     eventMap . at name .= Nothing
 
--- | Dispatch a 'DOM.Event' with a type name to the appropriate element.
+-- | Dispatch a 'DOM.Event' with an event name to the appropriate element.
 dispatchEvent :: Dispatches s m => Text -> DOM.Event -> m ()
 dispatchEvent evType ev = void . runMaybeT $ do
     target <- MaybeT . liftIO $ DOM.eventGetTarget ev
@@ -116,3 +117,7 @@ selectors = HashMap.fromList
     ]
   where
     (==>) = (,)
+
+-- | Event names.
+eventNames :: [Text]
+eventNames = HashMap.keys selectors

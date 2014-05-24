@@ -8,16 +8,19 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens               hiding (children)
+import           Control.Lens                  hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
-import           Data.Foldable              (foldlM)
+import           Data.Foldable                 (foldlM)
 import           Data.IORef
+import           Data.Text                     (Text)
 import           FRP.Sodium
-import qualified GHCJS.DOM.Document         as DOM
-import qualified GHCJS.DOM.Element          as DOM
-import qualified GHCJS.DOM.Node             as DOM
+import qualified GHCJS.DOM.Document            as DOM
+import qualified GHCJS.DOM.Element             as DOM
+import qualified GHCJS.DOM.Event               as DOM
+import qualified GHCJS.DOM.EventTargetClosures as DOM
+import qualified GHCJS.DOM.Node                as DOM
 
 import           Control.Monad.IOState
 import           Data.Default
@@ -63,9 +66,19 @@ mount parent b = do
         { _document      = doc
         , _mountDispatch = def
         }
-    sync $ do
+    untrap <- trapEvents doc $ \evType ev ->
+        runMount (dispatchEvent evType ev) ref
+    unlisten <- sync $ do
         e <- deltas [] (value b)
         listen e $ \des -> runMount (updateChildren n des) ref
+    return $ unlisten >> untrap
+
+-- | Trap events at the document level, and call the callback when an event
+-- occurs.
+-- TODO: shims for browser differences
+trapEvents :: DOM.Document -> (Text -> DOM.Event -> IO ()) -> IO (IO ())
+trapEvents doc f = fmap sequence_ . forM eventNames $ \name ->
+    DOM.eventTargetAddEventListener doc name False (\_ -> f name)
 
 -- | Update an 'Element' on a DOM node. For creation and updates, we modify
 -- the tree in the order:
