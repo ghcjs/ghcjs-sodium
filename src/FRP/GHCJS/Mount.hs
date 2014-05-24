@@ -26,7 +26,9 @@ import qualified GHCJS.DOM.Node                as DOM
 import           Control.Monad.IOState
 import           Data.Delta
 import qualified FRP.GHCJS.Events              as E
+import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Element
+import           FRP.GHCJS.Internal.Events
 
 -- | A node's unique identifier (for this library's purposes).
 type Name = Int
@@ -61,6 +63,7 @@ mount parent = do
         , _nextName = 0
         , _eventMap = HashMap.empty
         }
+    trapEvents doc ref
     return $ \es -> runMount (updateModel n es) ref
 
 -- | Get the conanical name of an element.
@@ -89,15 +92,46 @@ unregister e = do
     name <- getName e
     eventMap . at name .= Nothing
 
+-- | Listen to a top-level event.
+listen :: DOM.Document -> Text -> (DOM.Event -> IO ()) -> IO ()
+listen doc evType f =
+    void . DOM.eventTargetAddEventListener doc evType False $ \_ -> f
+
+-- | Set up event handlers.
+trapEvents :: DOM.Document -> IORef MountState -> IO ()
+trapEvents doc ref = do
+    trap "click"       E.click
+    trap "doubleClick" E.doubleClick
+    trap "drag"        E.drag
+    trap "dragEnd"     E.dragEnd
+    trap "dragEnter"   E.dragEnter
+    trap "dragExit"    E.dragExit
+    trap "dragLeave"   E.dragLeave
+    trap "dragOver"    E.dragOver
+    trap "dragStart"   E.dragStart
+    trap "drop"        E.drop
+    trap "mouseDown"   E.mouseDown
+    trap "mouseEnter"  E.mouseEnter
+    trap "mouseLeave"  E.mouseLeave
+    trap "mouseMove"   E.mouseMove
+    trap "mouseOut"    E.mouseOut
+    trap "mouseOver"   E.mouseOver
+    trap "mouseUp"     E.mouseUp
+  where
+    trap evType l = listen doc evType $ \ev ->
+        runMount (dispatchEvent l ev) ref
+
 -- | Dispatch a 'DOM.Event' to the appropriate element.
-dispatchEvent :: (E.Events -> DOM.Event -> IO ()) -> DOM.Event -> Mount ()
-dispatchEvent f ev = do
+dispatchEvent :: Event e => Getting (Input e) E.Events (Input e) -> DOM.Event -> Mount ()
+dispatchEvent l ev = do
     Just target <- liftIO $ DOM.eventGetTarget ev
     name <- getName (DOM.castToElement target)
     r <- use (eventMap . at name)
     case r of
         Nothing -> return ()
-        Just es -> liftIO $ f es ev
+        Just es -> liftIO $ do
+            e <- extractEvent ev
+            fire (es ^. l) e
 
 -- | Update the model and the DOM tree.
 updateModel :: DOM.Node -> [Element] -> Mount ()
