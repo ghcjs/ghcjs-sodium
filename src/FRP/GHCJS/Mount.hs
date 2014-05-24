@@ -118,12 +118,11 @@ trapEvents doc ref = do
     trap "mouseOver"   E.mouseOver
     trap "mouseUp"     E.mouseUp
   where
-    trap evType l = listen doc evType $ \ev ->
-        runMount (dispatchEvent l ev) ref
+    trap evType l = listen doc evType $ \ev -> runMount (dispatch l ev) ref
 
 -- | Dispatch a 'DOM.Event' to the appropriate element.
-dispatchEvent :: Event e => Getting (Input e) E.Events (Input e) -> DOM.Event -> Mount ()
-dispatchEvent l ev = do
+dispatch :: Event e => Getting (Input e) E.Events (Input e) -> DOM.Event -> Mount ()
+dispatch l ev = do
     Just target <- liftIO $ DOM.eventGetTarget ev
     name <- getName (DOM.castToElement target)
     r <- use (eventMap . at name)
