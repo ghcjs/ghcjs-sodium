@@ -130,6 +130,7 @@ dispatch l ev = do
         Nothing -> return ()
         Just es -> liftIO $ do
             e <- extractEvent ev
+            DOM.eventStopPropagation ev
             fire (es ^. l) e
 
 -- | Update the model and the DOM tree.
