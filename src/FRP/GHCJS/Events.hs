@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 -- | Events.
 module FRP.GHCJS.Events
@@ -16,11 +17,17 @@ module FRP.GHCJS.Events
 
 import           Control.Applicative
 import           Control.Lens
+import           Control.Monad
 import           Data.Maybe
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
+import           Data.Text                  (Text)
+import qualified Data.Text                  as Text
 import           GHC.Generics
-import qualified GHCJS.DOM.MouseEvent      as DOM
+import qualified GHCJS.DOM.Element          as DOM
+import qualified GHCJS.DOM.Event            as DOM
+import qualified GHCJS.DOM.HTMLInputElement as DOM
+import qualified GHCJS.DOM.MouseEvent       as DOM
 
 import           Data.Default
 import           FRP.GHCJS.Input
@@ -83,9 +90,37 @@ instance Event MouseEvent where
             , _screenPosition = screenPos
             }
 
+-- | An input event.
+data InputEvent = InputEvent
+    { _checked :: !Bool
+    , _value   :: !Text
+    }
+
+makeClassy ''InputEvent
+
+instance Event InputEvent where
+    extractEvent ev = do
+        Just target <- DOM.eventGetTarget ev
+        let e = DOM.castToHTMLInputElement target
+        oldChecked <- not . Text.null <$>
+            DOM.elementGetAttribute e ("checked" :: Text)
+        oldValue   <- DOM.elementGetAttribute e ("value" :: Text)
+        newChecked <- DOM.htmlInputElementGetChecked e
+        newValue   <- DOM.htmlInputElementGetValue e
+        -- revert values to original state
+        when (oldChecked /= newChecked) $
+            DOM.htmlInputElementSetChecked e newChecked
+        when (oldValue /= newValue) $
+            DOM.htmlInputElementSetValue e newValue
+        return InputEvent
+            { _checked = newChecked
+            , _value   = newValue
+            }
+
 -- | A set of event handlers for an element.
 data Events = Events
-    { _click       :: Input MouseEvent
+    { _change      :: Input InputEvent
+    , _click       :: Input MouseEvent
     , _doubleClick :: Input MouseEvent
     , _drag        :: Input MouseEvent
     , _dragEnd     :: Input MouseEvent

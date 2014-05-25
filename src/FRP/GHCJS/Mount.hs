@@ -100,6 +100,7 @@ listen doc evType f =
 -- | Set up event handlers.
 trapEvents :: DOM.Document -> IORef MountState -> IO ()
 trapEvents doc ref = do
+    trap "change"      E.change
     trap "click"       E.click
     trap "doubleClick" E.doubleClick
     trap "drag"        E.drag
