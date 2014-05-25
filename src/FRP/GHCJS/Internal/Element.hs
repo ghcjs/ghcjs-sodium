@@ -1,24 +1,21 @@
-{-# LANGUAGE TemplateHaskell #-}
 module FRP.GHCJS.Internal.Element
     ( Element(..)
-    , _Extend
-    , _Tag
-    , _Text
     , Component(..)
     ) where
 
-import           Control.Lens.TH
-import           Data.Text         (Text)
-import qualified GHCJS.DOM.Element as DOM
+import           Data.Text                (Text)
+import qualified GHCJS.DOM.Element        as DOM
+import qualified GHCJS.DOM.Event          as DOM
 
-import           FRP.GHCJS.Events
+import           FRP.GHCJS.Input
+import           FRP.GHCJS.Internal.Event
 
 -- | A document element.
 data Element
       -- | Extend an 'Element' with initialization and update operations.
     = Extend Component Element
       -- | A vanilla HTML tag.
-    | Tag !Text Events [Element]
+    | Tag !Text (EventType -> Input DOM.Event) [Element]
       -- | A text node.
     | Text !Text
 
@@ -35,5 +32,3 @@ data Component = Component
       -- | Delete the component, performing any cleanup.
     , destroy       :: DOM.Element -> IO ()
     }
-
-makePrisms ''Element

@@ -12,33 +12,41 @@ module FRP.GHCJS.Element
     , input
     ) where
 
+import           Prelude                       hiding (div, span)
+
 import           Control.Lens
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
-import           Prelude                       hiding (div, span)
+import qualified GHCJS.DOM.Event               as DOM
 
 import qualified FRP.GHCJS.Attributes          as A
-import           FRP.GHCJS.Events
+import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Attributes
 import           FRP.GHCJS.Internal.Element
+import           FRP.GHCJS.Internal.Event
 
 -- | Create a text node.
 text :: Text -> Element
 text = Text
 
--- | Create a tag with attributes.
-tag :: (Attributes a, HasEvents a) => Text -> a -> [Element] -> Element
-tag name = tag' name name
+-- | Select a handler based on the event type.
+selectInput :: A.EventHandlers -> EventType -> Input DOM.Event
+selectInput handlers evType = case evType of
+      Click -> extract A.click
+    where
+      extract l = Input $ \ev -> do
+          ev' <- extractEvent evType ev
+          fire (handlers ^. l) ev'
 
 -- | Create a tag with attributes and the specified component name.
 tag'
-    :: (Attributes a, HasEvents a)
+    :: (Attributes a, A.HasEventHandlers a)
     => Text
     -> Text
     -> a
     -> [Element]
     -> Element
-tag' name compName attrs = Extend component . Tag name (attrs ^. events)
+tag' name compName attrs = Extend component . Tag name handlers
   where
     component = Component
         { componentName = compName
@@ -46,6 +54,17 @@ tag' name compName attrs = Extend component . Tag name (attrs ^. events)
         , update        = applyAttributes attrs
         , destroy       = \_ -> return ()
         }
+
+    handlers = selectInput (attrs ^. A.eventHandlers)
+
+-- | Create a tag with attributes.
+tag
+    :: (Attributes a, A.HasEventHandlers a)
+    => Text
+    -> a
+    -> [Element]
+    -> Element
+tag name = tag' name name
 
 -- | The HTML @div@ element.
 div :: A.GlobalAttributes -> [Element] -> Element
@@ -65,4 +84,4 @@ input attrs = tag' "input" compName attrs
   where
     -- changing input types is not possible in all browsers, so different
     -- types must be different component classes
-    compName = Text.pack $ "input[type=" ++ show (attrs ^. A.type_) ++ "]"
+    compName = Text.pack $ "input." ++ show (attrs ^. A.type_)

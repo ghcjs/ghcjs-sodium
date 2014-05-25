@@ -6,6 +6,9 @@
 -- | HTML attributes and properties.
 module FRP.GHCJS.Attributes
     ( Default(..)
+      -- * Event handlers
+    , EventHandlers
+    , HasEventHandlers(..)
       -- * Global attributes
     , ElementId
     , Style
@@ -45,7 +48,8 @@ import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
 
 import           Data.Default
-import           FRP.GHCJS.Events              (Events, HasEvents (..))
+import           FRP.GHCJS.Event
+import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Attributes
 
 -- | Set or remove an attribute from an element.
@@ -58,10 +62,14 @@ attribute
     -> (b -> Maybe Text)
     -> IO ()
 attribute a e l attr f = case views l f a of
-    Nothing  -> removeAttribute e attr
+    Nothing  -> DOM.elementRemoveAttribute e attr
     Just new -> do
-        old <- getAttribute e attr
-        when (old /= Just new) $ setAttribute e attr new
+        old <- do
+            hasAttr <- DOM.elementHasAttribute e attr
+            if hasAttr
+                then Just <$> DOM.elementGetAttribute e attr
+                else return Nothing
+        when (old /= Just new) $ DOM.elementSetAttribute e attr new
 
 -- | Set a property on an element.
 property
@@ -79,7 +87,7 @@ property a e l getProp setProp f = do
     when (old /= new) $ setProp e new
 
 -- | Update the style of an element.
-updateStyle :: DOM.IsElement e => e -> Style -> IO ()
+updateStyle :: DOM.IsElement e => e -> HashMap Text Text -> IO ()
 updateStyle e obj = do
     Just decl <- DOM.elementGetStyle e
     -- TODO: We get a little overzealous removing properties because we don't
@@ -119,6 +127,15 @@ showText = Text.pack . show
 spaceSep :: Foldable f => (a -> Text) -> f a -> Text
 spaceSep f = Text.intercalate " " . map f . Foldable.toList
 
+-- | Event handlers.
+data EventHandlers = EventHandlers
+    { _click :: Input MouseEvent
+    } deriving (Generic)
+
+makeClassy ''EventHandlers
+
+instance Default EventHandlers
+
 -- | An element identifier.
 type ElementId = Text
 
@@ -131,28 +148,28 @@ data Dir = LTR | RTL | Auto
 
 -- | Global attributes.
 data GlobalAttributes = GlobalAttributes
-    { _accessKey       :: !(Set Char)
-    , _className       :: !(HashSet Text)
-    , _contentEditable :: !(Maybe Bool)
-    , _contextMenu     :: !ElementId
-    , _dir             :: !(Maybe Dir)
-    , _draggable       :: !(Maybe Bool)
-    , _hidden          :: !Bool
-    , _id_             :: !ElementId
-    , _lang            :: !Text
-    , _spellCheck      :: !(Maybe Bool)
-    , _style           :: !Style
-    , _tabIndex        :: !(Maybe Int)
-    , _title           :: !Text
-    , _globalEvents    :: !Events
+    { _globalEventHandlers :: EventHandlers
+    , _accessKey           :: !(Set Char)
+    , _className           :: !(HashSet Text)
+    , _contentEditable     :: !(Maybe Bool)
+    , _contextMenu         :: !ElementId
+    , _dir                 :: !(Maybe Dir)
+    , _draggable           :: !(Maybe Bool)
+    , _hidden              :: !Bool
+    , _id_                 :: !ElementId
+    , _lang                :: !Text
+    , _spellCheck          :: !(Maybe Bool)
+    , _style               :: !Style
+    , _tabIndex            :: !(Maybe Int)
+    , _title               :: !Text
     } deriving (Generic)
 
 makeClassy ''GlobalAttributes
 
 instance Default GlobalAttributes
 
-instance HasEvents GlobalAttributes where
-    events = globalEvents
+instance HasEventHandlers GlobalAttributes where
+    eventHandlers = globalEventHandlers
 
 instance Attributes GlobalAttributes where
     applyAttributes a e = do
@@ -234,8 +251,8 @@ makeClassy ''InputAttributes
 
 instance Default InputAttributes
 
-instance HasEvents InputAttributes where
-    events = globalAttributes . events
+instance HasEventHandlers InputAttributes where
+    eventHandlers = globalAttributes . eventHandlers
 
 instance HasGlobalAttributes InputAttributes where
     globalAttributes = inputGlobalAttributes

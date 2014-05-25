@@ -8,73 +8,72 @@ module FRP.GHCJS.Mount
     ) where
 
 import           Control.Applicative
-import           Control.Lens                  hiding (children)
+import           Control.Lens               hiding (children)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Class
-import           Data.Foldable                 (foldlM)
-import           Data.HashMap.Strict           (HashMap)
-import qualified Data.HashMap.Strict           as HashMap
+import           Data.Foldable              (foldlM)
+import           Data.HashMap.Strict        (HashMap)
+import qualified Data.HashMap.Strict        as HashMap
 import           Data.IORef
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
-import qualified GHCJS.DOM.Document            as DOM
-import qualified GHCJS.DOM.Element             as DOM
-import qualified GHCJS.DOM.Event               as DOM
-import qualified GHCJS.DOM.EventTargetClosures as DOM
-import qualified GHCJS.DOM.Node                as DOM
+import           Data.Text                  (Text)
+import qualified GHCJS.DOM.Document         as DOM
+import qualified GHCJS.DOM.Element          as DOM
+import qualified GHCJS.DOM.Event            as DOM
+import qualified GHCJS.DOM.Node             as DOM
 
 import           Control.Monad.IOState
 import           Data.Delta
-import qualified FRP.GHCJS.Events              as E
 import           FRP.GHCJS.Input
-import           FRP.GHCJS.Internal.Attributes
 import           FRP.GHCJS.Internal.Element
-import           FRP.GHCJS.Internal.Events
+import           FRP.GHCJS.Internal.Event
+
+makePrisms ''Element
 
 -- | A node's unique identifier (for this library's purposes).
 type Name = Int
 
 -- | The mount state.
 data MountState = MountState
-    { _document :: !DOM.Document
-    , _model    :: [Element]
-    , _nextName :: !Name
-    , _eventMap :: !(HashMap Name E.Events)
+    { _document   :: !DOM.Document
+    , _mountPoint :: !DOM.Node
+    , _model      :: [Element]
+    , _nextName   :: !Name
+    , _eventMap   :: !(HashMap Name (EventType -> Input DOM.Event))
     }
 
 makeLenses ''MountState
 
--- | A state monad for mounting.
+-- | Mount actions.
 newtype Mount a = Mount (IOState MountState a)
     deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
 
--- | Run the 'Mount' monad.
+-- | Run a mount action.
 runMount :: Mount a -> IORef MountState -> IO a
 runMount (Mount m) = runIOState m
 
 -- | Mount a dynamic list of 'Element's as children of a DOM 'Node'. The
 -- returned function can be used to push updates to the document.
-mount :: DOM.IsNode e => e -> IO ([Element] -> IO ())
+mount :: DOM.IsNode a => a -> IO ([Element] -> IO ())
 mount parent = do
     let n = DOM.toNode parent
     Just doc <- DOM.nodeGetOwnerDocument n
     ref <- newIORef MountState
-        { _document = doc
-        , _model    = []
-        , _nextName = 0
-        , _eventMap = HashMap.empty
+        { _document   = doc
+        , _mountPoint = n
+        , _model      = []
+        , _nextName   = 0
+        , _eventMap   = HashMap.empty
         }
-    trapEvents doc ref
-    return $ \es -> runMount (updateModel n es) ref
+    return $ \es -> runMount (updateModel es) ref
 
 -- | Get the conanical name of an element.
-getName :: DOM.Element -> Mount Name
+getName :: DOM.IsElement a => a -> Mount Name
 getName e = do
-    r <- liftIO $ getAttribute e nameAttr
-    case r of
-        Just s  -> return $ read (Text.unpack s)
-        Nothing -> do
+    hasName <- liftIO $ DOM.elementHasAttribute e nameAttr
+    if hasName
+        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
+        else do
             name <- nextName <<+= 1
             liftIO $ DOM.elementSetAttribute e nameAttr (show name)
             return name
@@ -83,62 +82,31 @@ getName e = do
 
 -- | Register a set of event handlers for an element, overwriting any
 -- previous handlers.
-register :: DOM.Element -> E.Events -> Mount ()
-register e evs = do
+register :: DOM.Element -> (EventType -> Input DOM.Event) -> Mount ()
+register e h = do
     name <- getName e
-    eventMap . at name ?= evs
+    eventMap . at name ?= h
 
--- | Unregister an element.
+-- | Unregister event handlers for an element.
 unregister :: DOM.Element -> Mount ()
 unregister e = do
     name <- getName e
     eventMap . at name .= Nothing
 
--- | Listen to a top-level event.
-listen :: DOM.Document -> Text -> (DOM.Event -> IO ()) -> IO ()
-listen doc evType f =
-    void . DOM.eventTargetAddEventListener doc evType False $ \_ -> f
-
--- | Set up event handlers.
-trapEvents :: DOM.Document -> IORef MountState -> IO ()
-trapEvents doc ref = do
-    trap "change"      E.change
-    trap "click"       E.click
-    trap "doubleClick" E.doubleClick
-    trap "drag"        E.drag
-    trap "dragEnd"     E.dragEnd
-    trap "dragEnter"   E.dragEnter
-    trap "dragExit"    E.dragExit
-    trap "dragLeave"   E.dragLeave
-    trap "dragOver"    E.dragOver
-    trap "dragStart"   E.dragStart
-    trap "drop"        E.drop
-    trap "mouseDown"   E.mouseDown
-    trap "mouseEnter"  E.mouseEnter
-    trap "mouseLeave"  E.mouseLeave
-    trap "mouseMove"   E.mouseMove
-    trap "mouseOut"    E.mouseOut
-    trap "mouseOver"   E.mouseOver
-    trap "mouseUp"     E.mouseUp
-  where
-    trap evType l = listen doc evType $ \ev -> runMount (dispatch l ev) ref
-
 -- | Dispatch a 'DOM.Event' to the appropriate element.
-dispatch :: Event e => Getting (Input e) E.Events (Input e) -> DOM.Event -> Mount ()
-dispatch l ev = do
+dispatch :: EventType -> DOM.Event -> Mount ()
+dispatch evType ev = do
     Just target <- liftIO $ DOM.eventGetTarget ev
     name <- getName (DOM.castToElement target)
     r <- use (eventMap . at name)
     case r of
         Nothing -> return ()
-        Just es -> liftIO $ do
-            e <- extractEvent ev
-            DOM.eventStopPropagation ev
-            fire (es ^. l) e
+        Just h  -> liftIO $ fire (h evType) ev
 
 -- | Update the model and the DOM tree.
-updateModel :: DOM.Node -> [Element] -> Mount ()
-updateModel n new = do
+updateModel :: [Element] -> Mount ()
+updateModel new = do
+    n <- use mountPoint
     old <- model <<.= new
     updateChildren n (Delta old new)
 
@@ -204,18 +172,18 @@ updateChildren parent des = editChildren (des ^. diff)
 
 -- | Construct a concrete DOM node from an 'Element'.
 createElement :: Element -> Mount DOM.Node
-createElement (Extend c e)   = do
+createElement (Extend c e) = do
     n <- createElement e
     liftIO $ create c (DOM.castToElement n)
     return n
-createElement (Tag s evs cs) = do
+createElement (Tag s h cs) = do
     d <- use document
     Just e <- liftIO $ DOM.documentCreateElement d s
-    register e evs
+    register e h
     let n = DOM.toNode e
     updateChildren n (Delta [] cs)
     return n
-createElement (Text s)       = do
+createElement (Text s)     = do
     d <- use document
     Just t <- liftIO $ DOM.documentCreateTextNode d s
     return (DOM.toNode t)
