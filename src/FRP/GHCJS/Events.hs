@@ -13,6 +13,9 @@ module FRP.GHCJS.Events
     , Button(..)
     , Modifier(..)
     , Position(..)
+      -- * Input events
+    , InputEvent
+    , HasInputEvent(..)
     ) where
 
 import           Control.Applicative

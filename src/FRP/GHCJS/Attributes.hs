@@ -21,7 +21,7 @@ module FRP.GHCJS.Attributes
     , HasInputAttributes(..)
     ) where
 
-import           Prelude                       hiding (min, max)
+import           Prelude                       hiding (max, min)
 
 import           Control.Applicative
 import           Control.Lens
@@ -45,7 +45,7 @@ import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
 
 import           Data.Default
-import           FRP.GHCJS.Events
+import           FRP.GHCJS.Events              (Events, HasEvents (..))
 import           FRP.GHCJS.Internal.Attributes
 
 -- | Set or remove an attribute from an element.
