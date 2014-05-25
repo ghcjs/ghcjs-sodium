@@ -80,8 +80,7 @@ getName e = do
   where
     nameAttr = "data-ghcjs-sodium-id" :: Text
 
--- | Register a set of event handlers for an element, overwriting any
--- previous handlers.
+-- | Register a set of event handlers for an element.
 register :: DOM.Element -> (EventType -> Input DOM.Event) -> Mount ()
 register e h = do
     name <- getName e
@@ -125,15 +124,16 @@ updateElement parent n de = case patterns of
         n' <- createElement (newValue de)
         void . liftIO $ DOM.nodeReplaceChild parent (Just n') (Just n)
   where
-    patterns = updateComponent <$> de ^? match _Extend . equalOn (_1 . to componentName)
-           <|> updateTag       <$> de ^? match _Tag . equalOn _1
+    patterns = updateComponent <$> de ^? match _Element . equalOn _1
            <|> updateText      <$> de ^? match _Text
 
     updateComponent dt = do
-        updateElement parent n (dt ^. slice _2)
-        liftIO $ update (dt ^. slice _1 . to newValue) (DOM.castToElement n)
-
-    updateTag dt = dt ^! slice _3 . act (updateChildren n)
+        let e = DOM.castToElement n
+            c = dt ^. slice _2 . to newValue
+        unregister e
+        register e (handleEvent c)
+        liftIO $ create c e
+        dt ^! slice _3 . act (updateChildren n)
 
     updateText (Delta a b)
         | a == b    = return ()
@@ -172,28 +172,23 @@ updateChildren parent des = editChildren (des ^. diff)
 
 -- | Construct a concrete DOM node from an 'Element'.
 createElement :: Element -> Mount DOM.Node
-createElement (Extend c e) = do
-    n <- createElement e
-    liftIO $ create c (DOM.castToElement n)
-    return n
-createElement (Tag s h cs) = do
+createElement (Element tagName c cs) = do
     d <- use document
-    Just e <- liftIO $ DOM.documentCreateElement d s
-    register e h
+    Just e <- liftIO $ DOM.documentCreateElement d tagName
+    register e (handleEvent c)
+    liftIO $ create c e
     let n = DOM.toNode e
     updateChildren n (Delta [] cs)
     return n
-createElement (Text s)     = do
+createElement (Text s) = do
     d <- use document
     Just t <- liftIO $ DOM.documentCreateTextNode d s
     return (DOM.toNode t)
 
 -- | Destroy an 'Element'.
 destroyElement :: DOM.Node -> Element -> Mount ()
-destroyElement n (Extend c e) = do
-    liftIO $ destroy c (DOM.castToElement n)
-    destroyElement n e
-destroyElement n (Tag _ _ cs) = do
+destroyElement n (Element _ c cs) = do
     updateChildren n (Delta cs [])
+    liftIO $ destroy c (DOM.castToElement n)
     unregister (DOM.castToElement n)
-destroyElement _ _            = return ()
+destroyElement _ _ = return ()

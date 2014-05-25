@@ -3,6 +3,7 @@ module FRP.GHCJS.Internal.Element
     , Component(..)
     ) where
 
+import           Data.Monoid
 import           Data.Text                (Text)
 import qualified GHCJS.DOM.Element        as DOM
 import qualified GHCJS.DOM.Event          as DOM
@@ -12,23 +13,30 @@ import           FRP.GHCJS.Internal.Event
 
 -- | A document element.
 data Element
-      -- | Extend an 'Element' with initialization and update operations.
-    = Extend Component Element
-      -- | A vanilla HTML tag.
-    | Tag !Text (EventType -> Input DOM.Event) [Element]
+      -- | Extend a tag with initialization and events.
+    = Element !Text !Component [Element]
       -- | A text node.
     | Text !Text
 
 -- | A logical component in the document.
 data Component = Component
-    { -- | A component name that uniquely identifies the type or class of
-      -- this component. 'update' and 'delete' may assume that the 'Node'
-      -- has been created by 'create' of the same component name.
-      componentName :: !Text
+    { -- | Handle a DOM event.
+      handleEvent :: EventType -> Input DOM.Event
       -- | Create the component.
-    , create        :: DOM.Element -> IO ()
-      -- | Update an existing DOM node for this component.
-    , update        :: DOM.Element -> IO ()
+    , create      :: DOM.Element -> IO ()
       -- | Delete the component, performing any cleanup.
-    , destroy       :: DOM.Element -> IO ()
+    , destroy     :: DOM.Element -> IO ()
     }
+
+instance Monoid Component where
+  mempty = Component
+      { handleEvent = const mempty
+      , create      = \_ -> return ()
+      , destroy     = \_ -> return ()
+      }
+  mappend c1 c2 = Component
+      { handleEvent = \evType -> handleEvent c1 evType
+                              <> handleEvent c2 evType
+      , create      = \e -> create  c1 e >> create  c2 e
+      , destroy     = \e -> destroy c2 e >> destroy c1 e
+      }

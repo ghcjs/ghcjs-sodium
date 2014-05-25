@@ -16,7 +16,6 @@ import           Prelude                       hiding (div, span)
 
 import           Control.Lens
 import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
 import qualified GHCJS.DOM.Event               as DOM
 
 import qualified FRP.GHCJS.Attributes          as A
@@ -34,37 +33,24 @@ selectInput :: A.EventHandlers -> EventType -> Input DOM.Event
 selectInput handlers evType = case evType of
       Click -> extract A.click
     where
-      extract l = Input $ \ev -> do
-          ev' <- extractEvent evType ev
-          fire (handlers ^. l) ev'
+      extract l = Input $ \a -> do
+        b <- extractEvent evType a
+        fire (handlers ^. l) b
 
 -- | Create a tag with attributes and the specified component name.
-tag'
-    :: (Attributes a, A.HasEventHandlers a)
-    => Text
-    -> Text
-    -> a
-    -> [Element]
-    -> Element
-tag' name compName attrs = Extend component . Tag name handlers
-  where
-    component = Component
-        { componentName = compName
-        , create        = applyAttributes attrs
-        , update        = applyAttributes attrs
-        , destroy       = \_ -> return ()
-        }
-
-    handlers = selectInput (attrs ^. A.eventHandlers)
-
--- | Create a tag with attributes.
 tag
     :: (Attributes a, A.HasEventHandlers a)
     => Text
     -> a
     -> [Element]
     -> Element
-tag name = tag' name name
+tag name attrs = Element name component
+  where
+    component = Component
+        { handleEvent = selectInput (attrs ^. A.eventHandlers)
+        , create      = applyAttributes attrs
+        , destroy     = \_ -> return ()
+        }
 
 -- | The HTML @div@ element.
 div :: A.GlobalAttributes -> [Element] -> Element
@@ -80,8 +66,4 @@ span = tag "span"
 
 -- | The HTML @input@ element.
 input :: A.InputAttributes -> [Element] -> Element
-input attrs = tag' "input" compName attrs
-  where
-    -- changing input types is not possible in all browsers, so different
-    -- types must be different component classes
-    compName = Text.pack $ "input." ++ show (attrs ^. A.type_)
+input = tag "input"
