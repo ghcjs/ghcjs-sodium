@@ -16,9 +16,9 @@ import           Prelude                       hiding (div, span)
 
 import           Control.Lens
 import           Data.Text                     (Text)
-import qualified GHCJS.DOM.Event               as DOM
 
 import qualified FRP.GHCJS.Attributes          as A
+import qualified FRP.GHCJS.DOM                 as DOM
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Attributes
 import           FRP.GHCJS.Internal.Element

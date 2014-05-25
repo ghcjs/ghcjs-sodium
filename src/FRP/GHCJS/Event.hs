@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 -- | Events.
 module FRP.GHCJS.Event
@@ -15,9 +16,9 @@ import           Control.Lens
 import           Data.Maybe
 import           Data.Set                 (Set)
 import qualified Data.Set                 as Set
-import qualified GHCJS.DOM.MouseEvent     as DOM
 
 import           FRP.GHCJS.Internal.Event
+import           FRP.GHCJS.JavaScript
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton
@@ -50,24 +51,21 @@ makeClassy ''MouseEvent
 
 instance Event MouseEvent where
     extractEvent _ ev = do
-        let e = DOM.castToMouseEvent ev
-        evButton <- DOM.mouseEventGetButton e <&> \i -> case i of
-            2 -> RightButton
+        evButton <- ev ! "button" <&> \i -> case i :: Int of
+            0 -> LeftButton
             1 -> MiddleButton
-            _ -> LeftButton
-        let switch a b = if b then Just a else Nothing
+            _ -> RightButton
+        let switch a p = (\b -> if b then Just a else Nothing) <$> ev ! p
         evModifiers <- Set.fromList . catMaybes <$> sequence
-            [ switch Alt   <$> DOM.mouseEventGetAltKey e
-            , switch Ctrl  <$> DOM.mouseEventGetCtrlKey e
-            , switch Meta  <$> DOM.mouseEventGetMetaKey e
-            , switch Shift <$> DOM.mouseEventGetShiftKey e
+            [ switch Alt   "altKey"
+            , switch Ctrl  "ctrlKey"
+            , switch Meta  "metaKey"
+            , switch Shift "shiftKey"
             ]
-        clientPos <- Position <$> DOM.mouseEventGetClientX e
-                              <*> DOM.mouseEventGetClientY e
-        pagePos   <- Position <$> DOM.mouseEventGetX e
-                              <*> DOM.mouseEventGetY e
-        screenPos <- Position <$> DOM.mouseEventGetScreenX e
-                              <*> DOM.mouseEventGetScreenY e
+        let position a b = Position <$> ev ! a <*> ev ! b
+        clientPos <- position "clientX" "clientY"
+        pagePos   <- position "x" "y"
+        screenPos <- position "screenX" "screenY"
         return MouseEvent
             { _button         = evButton
             , _modifiers      = evModifiers

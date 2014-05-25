@@ -5,9 +5,8 @@ module FRP.GHCJS.Internal.Element
 
 import           Data.Monoid
 import           Data.Text                (Text)
-import qualified GHCJS.DOM.Element        as DOM
-import qualified GHCJS.DOM.Event          as DOM
 
+import qualified FRP.GHCJS.DOM            as DOM
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Event
 

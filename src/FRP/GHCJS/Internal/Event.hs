@@ -6,8 +6,9 @@ module FRP.GHCJS.Internal.Event
     ) where
 
 import           Data.Hashable
-import           GHC.Generics    (Generic)
-import qualified GHCJS.DOM.Event as DOM
+import           GHC.Generics  (Generic)
+
+import qualified FRP.GHCJS.DOM as DOM
 
 -- | Event types.
 data EventType = Click

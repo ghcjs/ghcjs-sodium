@@ -3,9 +3,7 @@ module FRP.GHCJS.Internal.Attributes
     ( Attributes(..)
     ) where
 
-import           Data.Text           (Text)
-import qualified GHCJS.DOM.Element   as DOM
-
+import qualified FRP.GHCJS.DOM as DOM
 import           Data.Default
 
 -- | DOM element attributes and properties.

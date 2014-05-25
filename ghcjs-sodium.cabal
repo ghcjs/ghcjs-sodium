@@ -29,9 +29,7 @@ library
     base,
     containers,
     contravariant,
-    dlist,
     ghcjs-base,
-    ghcjs-dom,
     hashable,
     lens,
     mtl,
@@ -47,9 +45,11 @@ library
     FRP.GHCJS.Mount
 
   other-modules:
+    FRP.GHCJS.DOM
     FRP.GHCJS.Internal.Attributes
     FRP.GHCJS.Internal.Element
     FRP.GHCJS.Internal.Event
+    FRP.GHCJS.JavaScript
     Control.Monad.IOState
     Data.Default
     Data.Delta
