@@ -58,10 +58,10 @@ attribute
     -> (b -> Maybe Text)
     -> IO ()
 attribute a e l attr f = case views l f a of
-    Nothing  -> DOM.elementRemoveAttribute e attr
+    Nothing  -> removeAttribute e attr
     Just new -> do
-        old <- DOM.elementGetAttribute e attr
-        when (old /= new) $ DOM.elementSetAttribute e attr new
+        old <- getAttribute e attr
+        when (old /= Just new) $ setAttribute e attr new
 
 -- | Set a property on an element.
 property
@@ -235,7 +235,7 @@ makeClassy ''InputAttributes
 instance Default InputAttributes
 
 instance HasEvents InputAttributes where
-    events = events
+    events = globalAttributes . events
 
 instance HasGlobalAttributes InputAttributes where
     globalAttributes = inputGlobalAttributes

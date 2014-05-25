@@ -17,6 +17,7 @@ import           Data.HashMap.Strict           (HashMap)
 import qualified Data.HashMap.Strict           as HashMap
 import           Data.IORef
 import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
 import qualified GHCJS.DOM.Document            as DOM
 import qualified GHCJS.DOM.Element             as DOM
 import qualified GHCJS.DOM.Event               as DOM
@@ -27,6 +28,7 @@ import           Control.Monad.IOState
 import           Data.Delta
 import qualified FRP.GHCJS.Events              as E
 import           FRP.GHCJS.Input
+import           FRP.GHCJS.Internal.Attributes
 import           FRP.GHCJS.Internal.Element
 import           FRP.GHCJS.Internal.Events
 
@@ -69,10 +71,10 @@ mount parent = do
 -- | Get the conanical name of an element.
 getName :: DOM.Element -> Mount Name
 getName e = do
-    hasNameAttr <- liftIO $ DOM.elementHasAttribute e nameAttr
-    if hasNameAttr
-        then liftIO $ read <$> DOM.elementGetAttribute e nameAttr
-        else do
+    r <- liftIO $ getAttribute e nameAttr
+    case r of
+        Just s  -> return $ read (Text.unpack s)
+        Nothing -> do
             name <- nextName <<+= 1
             liftIO $ DOM.elementSetAttribute e nameAttr (show name)
             return name
