@@ -102,6 +102,10 @@ updateStyle e obj = do
 nonNull :: Text -> Maybe Text
 nonNull t = if Text.null t then Nothing else Just t
 
+-- | Convert a boolean attribute.
+boolean :: Bool -> Maybe Text
+boolean b = if b then Just "" else Nothing
+
 -- | Convert a ternary attribute, which may be @true@, @false@, or a third
 -- default state.
 ternary :: Maybe Bool -> Maybe Text
@@ -240,9 +244,12 @@ instance Attributes InputAttributes where
     applyAttributes a e = do
         applyAttributes (a ^. globalAttributes) e
 
+        -- set "checked" and "value" as attributes so we can later retrieve
+        -- them when extracting change events
         attr accept       "accept"       nonNull
         attr alt          "alt"          nonNull
         attr autocomplete "autocomplete" nonNull
+        attr checked      "checked"      boolean
         attr form         "form"         nonNull
         attr height       "height"       (fmap showText)
         attr list         "list"         nonNull
@@ -257,15 +264,14 @@ instance Attributes InputAttributes where
         attr src          "src"          nonNull
         attr step         "step"         (fmap stepValue)
         attr type_        "type"         (Just . typeValue)
+        attr value        "value"        Just
         attr width        "width"        (fmap showText)
 
         prop autofocus DOM.htmlInputElementGetAutofocus DOM.htmlInputElementSetAutofocus id
-        prop checked   DOM.htmlInputElementGetChecked   DOM.htmlInputElementSetChecked   id
         prop disabled  DOM.htmlInputElementGetDisabled  DOM.htmlInputElementSetDisabled  id
         prop multiple  DOM.htmlInputElementGetMultiple  DOM.htmlInputElementSetMultiple  id
         prop readOnly  DOM.htmlInputElementGetReadOnly  DOM.htmlInputElementSetReadOnly  id
         prop required  DOM.htmlInputElementGetRequired  DOM.htmlInputElementSetRequired  id
-        prop value     DOM.htmlInputElementGetValue     DOM.htmlInputElementSetValue     id
       where
         attr = attribute a e
         prop = property a (DOM.castToHTMLInputElement e)
