@@ -29,14 +29,14 @@ data Component = Component
     }
 
 instance Monoid Component where
-  mempty = Component
-      { handleEvent = const mempty
-      , create      = \_ -> return ()
-      , destroy     = \_ -> return ()
-      }
-  mappend c1 c2 = Component
-      { handleEvent = \evType -> handleEvent c1 evType
-                              <> handleEvent c2 evType
-      , create      = \e -> create  c1 e >> create  c2 e
-      , destroy     = \e -> destroy c2 e >> destroy c1 e
-      }
+    mempty = Component
+        { handleEvent = const mempty
+        , create      = \_ -> return ()
+        , destroy     = \_ -> return ()
+        }
+    mappend c1 c2 = Component
+        { handleEvent = \evType -> handleEvent c1 evType
+                                <> handleEvent c2 evType
+        , create      = \e -> create  c1 e >> create  c2 e
+        , destroy     = \e -> destroy c2 e >> destroy c1 e
+        }
