@@ -6,9 +6,22 @@
 -- | HTML attributes and properties.
 module FRP.GHCJS.Attributes
     ( Default(..)
+      -- * Global attributes
+    , ElementId
+    , Style
+    , Dir(..)
     , GlobalAttributes
     , HasGlobalAttributes(..)
+      -- * Input attributes
+    , InputType(..)
+    , InputValue
+    , URL
+    , Step(..)
+    , InputAttributes
+    , HasInputAttributes(..)
     ) where
+
+import           Prelude                       hiding (min, max)
 
 import           Control.Applicative
 import           Control.Lens
@@ -26,6 +39,7 @@ import           GHC.Generics                  (Generic)
 import qualified GHCJS.DOM.CSSStyleDeclaration as DOM
 import qualified GHCJS.DOM.Element             as DOM
 import qualified GHCJS.DOM.HTMLElement         as DOM
+import qualified GHCJS.DOM.HTMLInputElement    as DOM
 import           GHCJS.DOM.Types               (maybeJSNull)
 import           GHCJS.Foreign                 (fromJSString)
 import           GHCJS.Types
@@ -160,3 +174,104 @@ instance Attributes GlobalAttributes where
         dirValue LTR  = "ltr"
         dirValue RTL  = "rtl"
         dirValue Auto = "auto"
+
+-- | An input type.
+data InputType
+    = Hidden | Text | Search | URL | Tel | Email | Password | DateTime
+    | Date | Month | Week | Time | Number | Range | Color | Checkbox | Radio
+    | File | Submit | Image | Reset | Button
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
+instance Default InputType where
+    def = Text
+
+-- | An input value.
+-- TODO: better type
+type InputValue = Text
+
+-- | A URL string.
+type URL = Text
+
+-- | An input step value.
+data Step = AnyStep | Step Double
+    deriving (Eq, Ord, Read, Show)
+
+-- | Input element attributes.
+data InputAttributes = InputAttributes
+    { _inputGlobalAttributes :: !GlobalAttributes
+    , _accept                :: !Text
+    , _alt                   :: !Text
+    , _autocomplete          :: !Text
+    , _autofocus             :: !Bool
+    , _checked               :: !Bool
+    , _disabled              :: !Bool
+    , _form                  :: !ElementId
+    , _height                :: !(Maybe Int)
+    , _list                  :: !ElementId
+    , _max                   :: !InputValue
+    , _maxLength             :: !(Maybe Int)
+    , _min                   :: !InputValue
+    , _minLength             :: !(Maybe Int)
+    , _multiple              :: !Bool
+    , _name                  :: !Text
+    , _pattern               :: !Text
+    , _placeHolder           :: !Text
+    , _readOnly              :: !Bool
+    , _required              :: !Bool
+    , _size                  :: !(Maybe Int)
+    , _src                   :: !URL
+    , _step                  :: !(Maybe Step)
+    , _type_                 :: !InputType
+    , _value                 :: !InputValue
+    , _width                 :: !(Maybe Int)
+    } deriving (Generic)
+
+makeClassy ''InputAttributes
+
+instance Default InputAttributes
+
+instance HasEvents InputAttributes where
+    events = events
+
+instance HasGlobalAttributes InputAttributes where
+    globalAttributes = inputGlobalAttributes
+
+instance Attributes InputAttributes where
+    applyAttributes a e = do
+        applyAttributes (a ^. globalAttributes) e
+
+        attr accept       "accept"       nonNull
+        attr alt          "alt"          nonNull
+        attr autocomplete "autocomplete" nonNull
+        attr form         "form"         nonNull
+        attr height       "height"       (fmap showText)
+        attr list         "list"         nonNull
+        attr max          "max"          nonNull
+        attr maxLength    "maxlength"    (fmap showText)
+        attr min          "min"          nonNull
+        attr minLength    "minlength"    (fmap showText)
+        attr name         "name"         nonNull
+        attr pattern      "pattern"      nonNull
+        attr placeHolder  "placeholder"  nonNull
+        attr size         "size"         (fmap showText)
+        attr src          "src"          nonNull
+        attr step         "step"         (fmap stepValue)
+        attr type_        "type"         (Just . typeValue)
+        attr width        "width"        (fmap showText)
+
+        prop autofocus DOM.htmlInputElementGetAutofocus DOM.htmlInputElementSetAutofocus id
+        prop checked   DOM.htmlInputElementGetChecked   DOM.htmlInputElementSetChecked   id
+        prop disabled  DOM.htmlInputElementGetDisabled  DOM.htmlInputElementSetDisabled  id
+        prop multiple  DOM.htmlInputElementGetMultiple  DOM.htmlInputElementSetMultiple  id
+        prop readOnly  DOM.htmlInputElementGetReadOnly  DOM.htmlInputElementSetReadOnly  id
+        prop required  DOM.htmlInputElementGetRequired  DOM.htmlInputElementSetRequired  id
+        prop value     DOM.htmlInputElementGetValue     DOM.htmlInputElementSetValue     id
+      where
+        attr = attribute a e
+        prop = property a (DOM.castToHTMLInputElement e)
+
+        stepValue AnyStep  = "any"
+        stepValue (Step s) = showText s
+
+        -- isn't that convenient
+        typeValue = Text.toLower . showText
