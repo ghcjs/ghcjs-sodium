@@ -21,7 +21,7 @@ import qualified Data.Text                  as Text
 
 import           Control.Monad.IOState
 import           Data.Delta
-import qualified FRP.GHCJS.DOM              as DOM
+import           FRP.GHCJS.DOM
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Element
 import           FRP.GHCJS.Internal.Event
@@ -34,10 +34,10 @@ type Name = Int
 
 -- | The mount state.
 data MountState = MountState
-    { _mountPoint :: !DOM.Element
+    { _mountPoint :: !DOMElement
     , _model      :: [Element]
     , _nextName   :: !Name
-    , _eventMap   :: !(HashMap Name (EventType -> Input DOM.Event))
+    , _eventMap   :: !(HashMap Name (EventType -> Input DOMEvent))
     }
 
 makeLenses ''MountState
@@ -52,7 +52,7 @@ runMount (Mount m) = runIOState m
 
 -- | Mount a dynamic list of 'Element's as children of a DOM node. The
 -- returned function can be used to push updates to the document.
-mount :: DOM.Element -> IO ([Element] -> IO ())
+mount :: DOMElement -> IO ([Element] -> IO ())
 mount e = do
     ref <- newIORef MountState
         { _mountPoint = e
@@ -63,7 +63,7 @@ mount e = do
     return $ \es -> runMount (updateModel es) ref
 
 -- | Get the conanical name of an element.
-getName :: DOM.Element -> Mount Name
+getName :: DOMElement -> Mount Name
 getName e = do
     val <- liftIO $ call e "getAttribute" nameAttr
     case val of
@@ -77,19 +77,19 @@ getName e = do
     nameAttr = "data-ghcjs-sodium-id" :: Text
 
 -- | Register a set of event handlers for an element.
-register :: DOM.Element -> (EventType -> Input DOM.Event) -> Mount ()
+register :: DOMElement -> (EventType -> Input DOMEvent) -> Mount ()
 register e h = do
     name <- getName e
     eventMap . at name ?= h
 
 -- | Unregister event handlers for an element.
-unregister :: DOM.Element -> Mount ()
+unregister :: DOMElement -> Mount ()
 unregister e = do
     name <- getName e
     eventMap . at name .= Nothing
 
--- | Dispatch a 'DOM.Event' to the appropriate element.
-dispatch :: EventType -> DOM.Event -> Mount ()
+-- | Dispatch a 'DOMEvent' to the appropriate element.
+dispatch :: EventType -> DOMEvent -> Mount ()
 dispatch evType ev = do
     target <- liftIO $ ev ! "target"
     name <- getName target
@@ -113,7 +113,7 @@ updateModel new = do
 -- 3. This component is created/updated, inner components to outer ones.
 --
 -- When an element is destroyed, they are destroyed in the opposite order.
-updateElement :: DOM.Element -> DOM.Element -> Delta Element -> Mount ()
+updateElement :: DOMElement -> DOMElement -> Delta Element -> Mount ()
 updateElement parent e de = case patterns of
     Just m  -> m
     Nothing -> do
@@ -135,7 +135,7 @@ updateElement parent e de = case patterns of
         | otherwise = liftIO $ setProp e "nodeValue" b
 
 -- | Update a list of child 'Element's on a parent DOM node.
-updateChildren :: DOM.Element -> Delta [Element] -> Mount ()
+updateChildren :: DOMElement -> Delta [Element] -> Mount ()
 updateChildren parent des = editChildren (des ^. diff)
   where
     editChildren edits = do
@@ -166,7 +166,7 @@ updateChildren parent des = editChildren (des ^. diff)
     editChild _ _ = return Nothing
 
 -- | Construct a concrete DOM node from an 'Element'.
-createElement :: Element -> Mount DOM.Element
+createElement :: Element -> Mount DOMElement
 createElement (Element tagName c cs) = do
     d <- liftIO $ global "document"
     e <- liftIO $ call d "createElement" tagName
@@ -179,7 +179,7 @@ createElement (Text s) = do
     liftIO $ call d "createTextNode" s
 
 -- | Destroy an 'Element'.
-destroyElement :: DOM.Element -> Element -> Mount ()
+destroyElement :: DOMElement -> Element -> Mount ()
 destroyElement e (Element _ c cs) = do
     updateChildren e (Delta cs [])
     liftIO $ destroy c e

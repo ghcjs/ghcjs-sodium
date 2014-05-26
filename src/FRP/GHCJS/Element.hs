@@ -18,7 +18,7 @@ import           Control.Lens
 import           Data.Text                     (Text)
 
 import qualified FRP.GHCJS.Attributes          as A
-import qualified FRP.GHCJS.DOM                 as DOM
+import           FRP.GHCJS.DOM
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Attributes
 import           FRP.GHCJS.Internal.Element
@@ -29,7 +29,7 @@ text :: Text -> Element
 text = Text
 
 -- | Select a handler based on the event type.
-selectInput :: A.EventHandlers -> EventType -> Input DOM.Event
+selectInput :: A.EventHandlers -> EventType -> Input DOMEvent
 selectInput handlers evType = case evType of
       Click -> extract A.click
     where

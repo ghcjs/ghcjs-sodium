@@ -6,7 +6,7 @@ module FRP.GHCJS.Internal.Element
 import           Data.Monoid
 import           Data.Text                (Text)
 
-import qualified FRP.GHCJS.DOM            as DOM
+import           FRP.GHCJS.DOM
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.Internal.Event
 
@@ -20,11 +20,11 @@ data Element
 -- | A logical component in the document.
 data Component = Component
     { -- | Handle a DOM event.
-      handleEvent :: EventType -> Input DOM.Event
+      handleEvent :: EventType -> Input DOMEvent
       -- | Create the component.
-    , create      :: DOM.Element -> IO ()
+    , create      :: DOMElement -> IO ()
       -- | Delete the component, performing any cleanup.
-    , destroy     :: DOM.Element -> IO ()
+    , destroy     :: DOMElement -> IO ()
     }
 
 instance Monoid Component where

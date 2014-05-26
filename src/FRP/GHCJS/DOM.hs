@@ -1,16 +1,16 @@
 {-# LANGUAGE EmptyDataDecls #-}
 module FRP.GHCJS.DOM
-    ( Element
-    , Event
+    ( DOMElement
+    , DOMEvent
     ) where
 
 import GHCJS.Types
 
-data Element_
-data Event_
+data DOMElement_
+data DOMEvent_
 
 -- | A JavaScript DOM node or element.
-type Element = JSRef Element_
+type DOMElement = JSRef DOMElement_
 
 -- | A JavaScript DOM event.
-type Event = JSRef Event_
+type DOMEvent = JSRef DOMEvent_

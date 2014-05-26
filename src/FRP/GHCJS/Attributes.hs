@@ -42,7 +42,7 @@ import           GHC.Generics                  (Generic)
 import           GHCJS.Types
 
 import           Data.Default
-import qualified FRP.GHCJS.DOM                 as DOM
+import           FRP.GHCJS.DOM
 import           FRP.GHCJS.Event
 import           FRP.GHCJS.Input
 import           FRP.GHCJS.JavaScript
@@ -51,7 +51,7 @@ import           FRP.GHCJS.Internal.Attributes
 -- | Set or remove an attribute from an element.
 attribute
     :: a
-    -> DOM.Element
+    -> DOMElement
     -> Getting (Maybe Text) a b
     -> Text
     -> (b -> Maybe Text)
@@ -70,7 +70,7 @@ attribute a e l attr f = case views l f a of
 property
     :: (Eq b, JSValue b)
     => a
-    -> DOM.Element
+    -> DOMElement
     -> Getting b a c
     -> Text
     -> (c -> b)
@@ -81,7 +81,7 @@ property a e l prop f = do
     when (old /= new) $ setProp e prop new
 
 -- | Update the style of an element.
-updateStyle :: DOM.Element -> HashMap Text Text -> IO ()
+updateStyle :: DOMElement -> HashMap Text Text -> IO ()
 updateStyle e obj = do
     decl <- e ! "style" :: IO (JSRef ())
     -- TODO: We get a little overzealous removing properties because we don't
