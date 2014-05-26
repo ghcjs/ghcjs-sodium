@@ -1,69 +1,39 @@
 {-# LANGUAGE OverloadedStrings #-}
-module FRP.GHCJS.Element
+module FRP.GHCJS.Html
     ( -- * Text
       Element
     , text
-      -- * Grouping content
+    , tag
     , div
-    , main
-      -- * Text-level semantics
     , span
-      -- * Forms
-    , input
     ) where
 
-import           Prelude                       hiding (div, span)
+import           Prelude                   hiding (div, span)
 
-import           Control.Lens
-import           Data.Text                     (Text)
+import           Data.Monoid
+import           Data.Text                 (Text)
 
-import qualified FRP.GHCJS.Attributes          as A
-import           FRP.GHCJS.DOM
-import           FRP.GHCJS.Input
-import           FRP.GHCJS.Internal.Attributes
-import           FRP.GHCJS.Internal.Element
-import           FRP.GHCJS.Internal.Event
+import qualified FRP.GHCJS.Html.Attributes as A
+import           FRP.GHCJS.Types
 
 -- | Create a text node.
 text :: Text -> Element
 text = Text
 
--- | Select a handler based on the event type.
-selectInput :: A.EventHandlers -> EventType -> Input DOMEvent
-selectInput handlers evType = case evType of
-      Click -> extract A.click
-    where
-      extract l = Input $ \a -> do
-        b <- extractEvent evType a
-        fire (handlers ^. l) b
-
 -- | Create a tag with attributes and the specified component name.
-tag
-    :: (Attributes a, A.HasEventHandlers a)
-    => Text
-    -> a
-    -> [Element]
-    -> Element
+tag :: Text -> A.Attributes -> [Element] -> Element
 tag name attrs = Element name component
   where
     component = Component
-        { handleEvent = selectInput (attrs ^. A.eventHandlers)
-        , create      = applyAttributes attrs
+        { handleEvent = const mempty
+        , create      = A.applyAttributes attrs
         , destroy     = \_ -> return ()
         }
 
 -- | The HTML @div@ element.
-div :: A.GlobalAttributes -> [Element] -> Element
+div :: A.Attributes -> [Element] -> Element
 div = tag "div"
 
--- | The HTML @main@ element.
-main :: A.GlobalAttributes -> [Element] -> Element
-main = tag "main"
-
 -- | The HTML @span@ element.
-span :: A.GlobalAttributes -> [Element] -> Element
+span :: A.Attributes -> [Element] -> Element
 span = tag "span"
-
--- | The HTML @input@ element.
-input :: A.InputAttributes -> [Element] -> Element
-input = tag "input"

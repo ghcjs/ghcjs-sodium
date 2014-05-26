@@ -38,10 +38,12 @@ library
     unordered-containers
 
   exposed-modules:
+    FRP.GHCJS.Html
+    FRP.GHCJS.Html.Attributes
+    FRP.GHCJS.Html.Events
     FRP.GHCJS.Types
 
   other-modules:
     FRP.GHCJS.JavaScript
     Control.Monad.IOState
-    Data.Default
     Data.Delta
