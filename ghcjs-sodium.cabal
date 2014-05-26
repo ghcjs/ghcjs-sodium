@@ -44,6 +44,6 @@ library
     FRP.GHCJS.Types
 
   other-modules:
+    FRP.GHCJS.Delta
+    FRP.GHCJS.IOState
     FRP.GHCJS.JavaScript
-    Control.Monad.IOState
-    Data.Delta
