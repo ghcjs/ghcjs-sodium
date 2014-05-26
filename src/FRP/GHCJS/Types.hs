@@ -1,14 +1,49 @@
-module FRP.GHCJS.Internal.Element
-    ( Element(..)
+{-# LANGUAGE EmptyDataDecls #-}
+-- | Types and instances.
+module FRP.GHCJS.Types
+    ( -- * Inputs
+      Input(..)
+      -- * Events
+    , DOMEvent
+    , EventType(..)
+      -- * Elements
+    , DOMElement
+    , Element(..)
     , Component(..)
     ) where
 
+import           Data.Functor.Contravariant
+import           Data.Hashable
 import           Data.Monoid
-import           Data.Text                (Text)
+import           Data.Text                  (Text)
+import           GHCJS.Types
 
-import           FRP.GHCJS.DOM
-import           FRP.GHCJS.Input
-import           FRP.GHCJS.Internal.Event
+-- | An input into the event graph.
+newtype Input a = Input { fire :: a -> IO () }
+
+instance Monoid (Input a) where
+    mempty = Input $ \_ -> return ()
+    mappend (Input f) (Input g) = Input $ \a -> f a >> g a
+
+instance Contravariant Input where
+    contramap f (Input g) = Input (g . f)
+
+data DOMEvent_
+
+-- | A JavaScript DOM event.
+type DOMEvent = JSRef DOMEvent_
+
+-- | Event types.
+data EventType = Click
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
+instance Hashable EventType where
+    hashWithSalt salt = hashWithSalt salt . fromEnum
+
+data DOMElement_
+
+-- | A JavaScript DOM node or element.
+type DOMElement = JSRef DOMElement_
 
 -- | A document element.
 data Element

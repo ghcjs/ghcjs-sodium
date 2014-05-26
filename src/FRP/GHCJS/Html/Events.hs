@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 -- | Events.
-module FRP.GHCJS.Event
+module FRP.GHCJS.Events
     ( -- * Mouse events
       Button(..)
     , Modifier(..)
@@ -14,11 +14,11 @@ module FRP.GHCJS.Event
 import           Control.Applicative
 import           Control.Lens
 import           Data.Maybe
-import           Data.Set                 (Set)
-import qualified Data.Set                 as Set
+import           Data.Set             (Set)
+import qualified Data.Set             as Set
 
-import           FRP.GHCJS.Internal.Event
 import           FRP.GHCJS.JavaScript
+import           FRP.GHCJS.Types
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton

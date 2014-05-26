@@ -38,17 +38,9 @@ library
     unordered-containers
 
   exposed-modules:
-    FRP.GHCJS.Attributes
-    FRP.GHCJS.Element
-    FRP.GHCJS.Event
-    FRP.GHCJS.Input
-    FRP.GHCJS.Mount
+    FRP.GHCJS.Types
 
   other-modules:
-    FRP.GHCJS.DOM
-    FRP.GHCJS.Internal.Attributes
-    FRP.GHCJS.Internal.Element
-    FRP.GHCJS.Internal.Event
     FRP.GHCJS.JavaScript
     Control.Monad.IOState
     Data.Default
