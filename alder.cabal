@@ -27,12 +27,16 @@ library
 
   build-depends:
     base,
+    containers,
     contravariant,
     ghcjs-base,
     mtl,
-    text
+    text,
+    unordered-containers
 
   exposed-modules:
+    Alder.Html
+    Alder.Html.Attributes
     Alder.Types
 
   other-modules:

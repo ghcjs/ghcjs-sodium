@@ -25,7 +25,7 @@ tag :: Text -> A.Attributes -> [Element] -> Element
 tag name attrs = Element name component
   where
     component = Component
-        { handleEvent = const mempty
+        { handleEvent = mempty
         , create      = A.applyAttributes attrs
         , destroy     = \_ -> return ()
         }

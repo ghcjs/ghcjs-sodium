@@ -17,12 +17,10 @@ import           Data.Foldable       as Foldable (Foldable, toList)
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.HashSet        as HashSet
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Set            as Set
 import           Data.Text           as Text
 import           GHCJS.Types
 
-import           Alder.Html.Events
 import           Alder.JavaScript
 import           Alder.Types
 
@@ -77,8 +75,7 @@ type Style = HashMap Text Text
 
 -- | Attributes.
 data Attributes = Attributes
-    { _click           :: Input MouseEvent
-    , _accessKey       :: !(Set Char)
+    { _accessKey       :: !(Set Char)
     , _className       :: !(HashSet Text)
     , _contentEditable :: !(Maybe Bool)
     , _contextMenu     :: !ElementId
@@ -95,8 +92,7 @@ data Attributes = Attributes
 -- | Default attributes.
 def :: Attributes
 def = Attributes
-    { _click           = mempty
-    , _accessKey       = Set.empty
+    { _accessKey       = Set.empty
     , _className       = HashSet.empty
     , _contentEditable = Nothing
     , _contextMenu     = Text.empty
