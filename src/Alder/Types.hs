@@ -1,22 +1,26 @@
 {-# LANGUAGE EmptyDataDecls #-}
 -- | Types and instances.
 module Alder.Types
-    ( -- * Inputs
-      Input(..)
-      -- * Events
-    , DOMEvent
-    , EventType(..)
-      -- * Elements
+    ( DOMEvent
     , DOMElement
+    , Input(..)
     , Element(..)
     , Component(..)
     ) where
 
 import           Data.Functor.Contravariant
-import           Data.Hashable
 import           Data.Monoid
 import           Data.Text                  (Text)
 import           GHCJS.Types
+
+data NativeEvent
+data NativeElement
+
+-- | A JavaScript DOM event.
+type DOMEvent = JSRef NativeEvent
+
+-- | A JavaScript DOM node or element.
+type DOMElement = JSRef NativeElement
 
 -- | An input into the event graph.
 newtype Input a = Input { fire :: a -> IO () }
@@ -28,23 +32,6 @@ instance Monoid (Input a) where
 instance Contravariant Input where
     contramap f (Input g) = Input (g . f)
 
-data DOMEvent_
-
--- | A JavaScript DOM event.
-type DOMEvent = JSRef DOMEvent_
-
--- | Event types.
-data EventType = Click
-    deriving (Eq, Ord, Read, Show, Enum, Bounded)
-
-instance Hashable EventType where
-    hashWithSalt salt = hashWithSalt salt . fromEnum
-
-data DOMElement_
-
--- | A JavaScript DOM node or element.
-type DOMElement = JSRef DOMElement_
-
 -- | A document element.
 data Element
       -- | Extend a tag with initialization and events.
@@ -55,7 +42,7 @@ data Element
 -- | A logical component in the document.
 data Component = Component
     { -- | Handle a DOM event.
-      handleEvent :: EventType -> Input DOMEvent
+      handleEvent :: Text -> Input DOMEvent
       -- | Create the component.
     , create      :: DOMElement -> IO ()
       -- | Delete the component, performing any cleanup.

@@ -22,7 +22,7 @@ import           Alder.JavaScript
 import           Alder.Types
 
 class Event a where
-    extractEvent :: EventType -> DOMEvent -> IO a
+    extractEvent :: Text -> DOMEvent -> IO a
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton
