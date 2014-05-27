@@ -5,18 +5,19 @@ module Alder.JavaScript
     ( JSValue(..)
     , JSArgs(..)
     , global
-    , (!)
+    , getProp
     , setProp
     , call
     , apply
     ) where
 
 import           Control.Applicative
+import           Control.Monad.Trans
 import           Data.Maybe
 import           Data.Text          (Text)
 import qualified Data.Text          as Text
 
-import           GHCJS.Foreign      hiding (setProp)
+import           GHCJS.Foreign      hiding (getProp, setProp)
 import           GHCJS.Marshal
 import           GHCJS.Types
 
@@ -72,36 +73,34 @@ instance (JSValue a, JSValue b, JSValue c) => JSArgs (a, b, c) where
         res <- apply3 obj fun arg1 arg2 arg3
         fromJSValue res
 
-infixl 8 !
-
 -- | Get a global property value.
-global :: JSValue a => Text -> IO a
-global prop = do
+global :: (MonadIO m, JSValue a) => Text -> m a
+global prop = liftIO $ do
     a <- getGlobal (toJSString prop)
     fromJSValue a
 
 -- | Get a property value.
-(!) :: JSValue b => JSRef a -> Text -> IO b
-obj ! prop = do
+getProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> m b
+getProp obj prop = liftIO $ do
     res <- unsafeGetProp prop obj
     fromJSValue res
 
 -- | Set a property value.
-setProp :: JSValue b => JSRef a -> Text -> b -> IO ()
-setProp obj prop b = do
+setProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> b -> m ()
+setProp obj prop b = liftIO $ do
     val <- toJSValue b
     unsafeSetProp prop val obj
 
 -- | Apply a function to an argument.
-call :: (JSValue b, JSValue c) => JSRef a -> Text -> b -> IO c
-call obj fun b = do
+call :: (MonadIO m, JSValue b, JSValue c) => JSRef a -> Text -> b -> m c
+call obj fun b = liftIO $ do
     arg <- toJSValue b
     res <- apply1 obj (toJSString fun) arg
     fromJSValue res
 
 -- | Apply a function to multiple arguments.
-apply :: (JSArgs b, JSValue c) => JSRef a -> Text -> b -> IO c
-apply obj fun b = do
+apply :: (MonadIO m, JSArgs b, JSValue c) => JSRef a -> Text -> b -> m c
+apply obj fun b = liftIO $ do
     res <- applyFunction obj (toJSString fun) b
     fromJSValue res
 

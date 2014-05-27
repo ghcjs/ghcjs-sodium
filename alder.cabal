@@ -26,18 +26,18 @@ library
   ghc-options: -Wall
 
   build-depends:
+    aeson,
     base,
     containers,
     contravariant,
     ghcjs-base,
+    lens,
     mtl,
     text,
     unordered-containers
 
   exposed-modules:
-    Alder.Html
-    Alder.Html.Attributes
-    Alder.Types
+    Alder.Mount
 
   other-modules:
     Alder.IOState
