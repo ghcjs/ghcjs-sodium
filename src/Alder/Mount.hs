@@ -33,10 +33,8 @@ data Element
 type Name = Int
 
 data MountState = MountState
-    { _mountPoint :: !DOMElement
-    , _model      :: [Element]
-    , _nextName   :: !Name
-    , _eventMap   :: !(HashMap Name (Value -> IO ()))
+    { _nextName :: !Name
+    , _eventMap :: !(HashMap Name (Value -> IO ()))
     }
 
 makeLenses ''MountState
@@ -50,13 +48,11 @@ runMount (Mount m) = runIOState m
 ignore :: m () -> m ()
 ignore = id
 
-mount :: DOMElement -> IO ([Element] -> IO ())
-mount e = do
+mount :: IO ([Element] -> IO ())
+mount = do
     ref <- newIORef MountState
-        { _mountPoint = e
-        , _model      = []
-        , _nextName   = 0
-        , _eventMap   = HashMap.empty
+        { _nextName = 0
+        , _eventMap = HashMap.empty
         }
     return $ \es -> runMount (update es) ref
 
@@ -79,11 +75,11 @@ dispatch e ev = do
 
 update :: [Element] -> Mount ()
 update new = do
-    parent <- use mountPoint
-    model .= new
+    doc <- global "document"
+    body <- getProp doc "body"
     eventMap .= HashMap.empty
-    removeChildren parent
-    createChildren parent new
+    removeChildren body
+    createChildren body new
 
 create :: Element -> Mount DOMElement
 create (Element t attrs h cs) = do
