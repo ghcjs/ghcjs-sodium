@@ -4,7 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 -- | An IORef-based state monad.
 -- TODO: MVar?
-module FRP.GHCJS.IOState
+module Alder.IOState
     ( IOState(..)
     ) where
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 -- | JavaScript marshalling. This module is pretty unsafe. Be careful.
-module FRP.GHCJS.JavaScript
+module Alder.JavaScript
     ( JSValue(..)
     , JSArgs(..)
     , global

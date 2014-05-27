@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module FRP.GHCJS.Html
+module Alder.Html
     ( -- * Text
       Element
     , text
@@ -8,13 +8,13 @@ module FRP.GHCJS.Html
     , span
     ) where
 
-import           Prelude                   hiding (div, span)
+import           Prelude               hiding (div, span)
 
 import           Data.Monoid
-import           Data.Text                 (Text)
+import           Data.Text             (Text)
 
-import qualified FRP.GHCJS.Html.Attributes as A
-import           FRP.GHCJS.Types
+import qualified Alder.Html.Attributes as A
+import           Alder.Types
 
 -- | Create a text node.
 text :: Text -> Element

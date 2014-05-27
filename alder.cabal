@@ -1,4 +1,4 @@
-name:                ghcjs-sodium
+name:                alder
 version:             0.1.0
 synopsis:            Reactive JavaScript DOM
 license:             MIT
@@ -9,7 +9,7 @@ stability:           experimental
 homepage:            http://github.com/ghcjs/ghcjs-sodium
 bug-reports:         http://github.com/ghcjs/ghcjs-sodium
 copyright:           Copyright (c) 2014 Kyle Raftogianis
-category:            FRP, Web
+category:            Web
 build-type:          Simple
 cabal-version:       >= 1.8
 
@@ -38,12 +38,12 @@ library
     unordered-containers
 
   exposed-modules:
-    FRP.GHCJS.Html
-    FRP.GHCJS.Html.Attributes
-    FRP.GHCJS.Html.Events
-    FRP.GHCJS.Types
+    Alder.Html
+    Alder.Html.Attributes
+    Alder.Html.Events
+    Alder.Types
 
   other-modules:
-    FRP.GHCJS.Delta
-    FRP.GHCJS.IOState
-    FRP.GHCJS.JavaScript
+    Alder.Delta
+    Alder.IOState
+    Alder.JavaScript

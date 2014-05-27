@@ -1,6 +1,6 @@
 {-# LANGUAGE EmptyDataDecls #-}
 -- | Types and instances.
-module FRP.GHCJS.Types
+module Alder.Types
     ( -- * Inputs
       Input(..)
       -- * Events

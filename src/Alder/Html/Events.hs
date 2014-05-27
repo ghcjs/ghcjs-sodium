@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 -- | Events.
-module FRP.GHCJS.Html.Events
+module Alder.Html.Events
     ( Event(..)
       -- * Mouse events
     , Button(..)
@@ -15,11 +15,11 @@ module FRP.GHCJS.Html.Events
 import           Control.Applicative
 import           Control.Lens
 import           Data.Maybe
-import           Data.Set             (Set)
-import qualified Data.Set             as Set
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
 
-import           FRP.GHCJS.JavaScript
-import           FRP.GHCJS.Types
+import           Alder.JavaScript
+import           Alder.Types
 
 class Event a where
     extractEvent :: EventType -> DOMEvent -> IO a

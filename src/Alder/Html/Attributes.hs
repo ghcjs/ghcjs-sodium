@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE TypeOperators             #-}
 -- | HTML attributes and properties.
-module FRP.GHCJS.Html.Attributes
+module Alder.Html.Attributes
     ( ElementId
     , Style
     , Attributes(..)
@@ -13,18 +13,18 @@ module FRP.GHCJS.Html.Attributes
     ) where
 
 import           Control.Monad
-import           Data.Foldable         as Foldable (Foldable, toList)
-import           Data.HashMap.Strict   as HashMap hiding ((!))
-import           Data.HashSet          as HashSet
+import           Data.Foldable       as Foldable (Foldable, toList)
+import           Data.HashMap.Strict as HashMap hiding ((!))
+import           Data.HashSet        as HashSet
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Set              as Set
-import           Data.Text             as Text
+import           Data.Set            as Set
+import           Data.Text           as Text
 import           GHCJS.Types
 
-import           FRP.GHCJS.Html.Events
-import           FRP.GHCJS.JavaScript
-import           FRP.GHCJS.Types
+import           Alder.Html.Events
+import           Alder.JavaScript
+import           Alder.Types
 
 -- | Set or remove an attribute from an element.
 attribute :: DOMElement -> Text -> Maybe Text -> IO ()
