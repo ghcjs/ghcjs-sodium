@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Alder.Html
-    ( -- * Text
-      Element
+    ( Element
     , text
     , tag
     , div
@@ -10,7 +9,6 @@ module Alder.Html
 
 import           Prelude               hiding (div, span)
 
-import           Data.Monoid
 import           Data.Text             (Text)
 
 import qualified Alder.Html.Attributes as A
@@ -22,7 +20,7 @@ text = Text
 
 -- | Create a tag with attributes and the specified component name.
 tag :: Text -> A.Attributes -> [Element] -> Element
-tag name attrs = Element name (A.applyAttributes attrs) (\_ -> return ())
+tag name attrs = Element name (A.attributes attrs) (A.handleEvent attrs)
 
 -- | The HTML @div@ element.
 div :: A.Attributes -> [Element] -> Element
