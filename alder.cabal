@@ -36,6 +36,7 @@ library
     unordered-containers
 
   exposed-modules:
+    Alder.JavaScript
     Alder.Html
     Alder.Html.Attributes
     Alder.Html.Events
@@ -43,4 +44,3 @@ library
 
   other-modules:
     Alder.IOState
-    Alder.JavaScript

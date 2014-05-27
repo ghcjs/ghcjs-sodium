@@ -38,7 +38,7 @@ instance JSValue a => JSValue (Maybe a) where
 
     fromJSValue ref
         | isNull ref || isUndefined ref = return Nothing
-        | otherwise                     = fromJSValue ref
+        | otherwise                     = Just <$> fromJSValue ref
 
 instance JSValue Bool where
     toJSValue   = return . castRef . toJSBool
