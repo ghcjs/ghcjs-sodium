@@ -29,14 +29,13 @@ library
     aeson,
     base,
     containers,
-    contravariant,
     ghcjs-base,
-    lens,
     mtl,
     text,
     unordered-containers
 
   exposed-modules:
+    Alder.Html.Events
     Alder.Mount
 
   other-modules:
