@@ -51,7 +51,7 @@ instance FromJSON MouseEvent where
             ]
         let position a b = Position <$> ev .: a <*> ev .: b
         clientPos <- position "clientX" "clientY"
-        pagePos   <- position "x" "y"
+        pagePos   <- position "pageX" "pageY"
         screenPos <- position "screenX" "screenY"
         return MouseEvent
             { button         = evButton
