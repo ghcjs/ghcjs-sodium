@@ -54,3 +54,16 @@ library
     Alder.JavaScript
     Alder.Reconcile
     Alder.Unique
+
+executable todomvc
+  main-is: Main.hs
+  ghc-options: -Wall -O2
+
+  build-depends:
+    alder,
+    base,
+    containers,
+    contravariant,
+    lens,
+    sodium,
+    text
