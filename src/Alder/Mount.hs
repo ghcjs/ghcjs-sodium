@@ -30,6 +30,32 @@ data Element
     = Element !Text !(HashMap Text Text) (Value -> IO ()) [Element]
     | Text !Text
 
+toHashMap :: Attributes -> HashMap Text Text
+toHashMap attrs = Map.insert "class" classes (attributes attrs)
+  where
+    classes = Text.intercalate " " . HashSet.toList $ classSet attrs
+
+handleEvent :: Attributes -> Text -> Value -> IO ()
+handleEvent attrs eventName =
+    Hashmap.lookup eventName (handlers attrs)
+
+tag :: Text -> Attribute -> [Element] -> Element
+tag t (Attribute f) = Tag t (toHashMap attrs) (handleEvent attrs)
+  where
+    attrs = f mempty
+
+-- TODO: consolidate text nodes
+fromHtml :: HtmlM a -> [Element]
+fromHtml html = go mempty html []
+  where
+    go attr m = case m of
+        Empty            -> id
+        Append a b       -> go attr a . go attr b
+        Parent t a       -> (tag t attr (fromHtml sa) :)
+        Leaf t           -> (tag t attr [] :)
+        Content t        -> (Text t :)
+        AddAttribute a b -> go (a <> attr) b
+
 type Name = Int
 
 data MountState = MountState

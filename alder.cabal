@@ -40,9 +40,10 @@ library
   exposed-modules:
     Alder.Html
     Alder.Html.Attributes
+    Alder.Html.Elements
     Alder.Html.Events
-    Alder.Mount
 
   other-modules:
+    Alder.Html.Internal
     Alder.IOState
     Alder.JavaScript
