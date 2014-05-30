@@ -3,7 +3,7 @@ var Events = (function() {
     function trapEvent(mountAt, eventName, callback) {
         mountAt.addEventListener(eventName, function(e) {
             var obj = extractEvent(eventName, e);
-            callback(e.target, obj);
+            callback(e.target, eventName, obj);
         });
     }
 
@@ -27,7 +27,6 @@ var Events = (function() {
                     document.documentElement.scrollTop;
 
             return {
-                type:     eventName,
                 button:   button,
                 altKey:   event.altKey,
                 ctrlKey:  event.ctrlKey,
