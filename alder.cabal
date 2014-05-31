@@ -32,7 +32,6 @@ library
     base,
     containers,
     ghcjs-base,
-    lens,
     mtl,
     text,
     unordered-containers
@@ -42,6 +41,7 @@ library
     Alder.Html.Attributes
     Alder.Html.Elements
     Alder.Html.Events
+    Alder.Mount
 
   other-modules:
     Alder.Html.Internal

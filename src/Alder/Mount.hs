@@ -1,24 +1,21 @@
-{-# LANGUAGE EmptyDataDecls             #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Alder.Mount
-    ( Element(..)
-    , mount
+    ( mount
     ) where
 
-import           Control.Applicative
-import           Control.Lens              hiding (children)
 import           Control.Monad
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
-import           Data.Aeson                (Value)
+import           Data.Aeson
 import           Data.HashMap.Strict       as HashMap
 import           Data.IORef
+import           Data.Maybe
+import           Data.Monoid
 import           Data.Text                 as Text
 import           GHCJS.Types
 
+import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript
 
@@ -27,92 +24,84 @@ data NativeElement
 type DOMElement = JSRef NativeElement
 
 data Element
-    = Element !Text !(HashMap Text Text) (Value -> IO ()) [Element]
+    = Element !Text Attributes [Element]
     | Text !Text
-
-toHashMap :: Attributes -> HashMap Text Text
-toHashMap attrs = Map.insert "class" classes (attributes attrs)
-  where
-    classes = Text.intercalate " " . HashSet.toList $ classSet attrs
-
-handleEvent :: Attributes -> Text -> Value -> IO ()
-handleEvent attrs eventName =
-    Hashmap.lookup eventName (handlers attrs)
-
-tag :: Text -> Attribute -> [Element] -> Element
-tag t (Attribute f) = Tag t (toHashMap attrs) (handleEvent attrs)
-  where
-    attrs = f mempty
 
 -- TODO: consolidate text nodes
 fromHtml :: HtmlM a -> [Element]
 fromHtml html = go mempty html []
   where
-    go attr m = case m of
+    go attrs m = case m of
         Empty            -> id
-        Append a b       -> go attr a . go attr b
-        Parent t a       -> (tag t attr (fromHtml sa) :)
-        Leaf t           -> (tag t attr [] :)
+        Append a b       -> go attrs a . go attrs b
+        Parent t h       -> (Element t (applyAttributes attrs) (fromHtml h) :)
+        Leaf t           -> (Element t (applyAttributes attrs) [] :)
         Content t        -> (Text t :)
-        AddAttribute a b -> go (a <> attr) b
+        AddAttribute a h -> go (a <> attrs) h
+
+    applyAttributes (Attribute f) = f mempty
 
 type Name = Int
 
 data MountState = MountState
-    { _nextName :: !Name
-    , _eventMap :: !(HashMap Name (Value -> IO ()))
+    { nextName :: !Name
+    , eventMap :: !(HashMap Name Handlers)
     }
 
-makeLenses ''MountState
-
-newtype Mount a = Mount (IOState MountState a)
-    deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
-
-runMount :: Mount a -> IORef MountState -> IO a
-runMount (Mount m) = runIOState m
+type Mount = IOState MountState
 
 ignore :: m () -> m ()
 ignore = id
 
-mount :: IO ([Element] -> IO ())
+mount :: IO (Html -> IO ())
 mount = do
     ref <- newIORef MountState
-        { _nextName = 0
-        , _eventMap = HashMap.empty
+        { nextName = 0
+        , eventMap = HashMap.empty
         }
-    return $ \es -> runMount (update es) ref
+    return $ \html -> runIOState (update html) ref
 
 nameAttr :: Text
 nameAttr = "data-alder-id"
 
-register :: DOMElement -> (Value -> IO ()) -> Mount ()
+register :: DOMElement -> Handlers -> Mount ()
 register e h = do
-    name <- nextName <<+= 1
+    name <- gets nextName
     ignore $ apply e "setAttribute" (nameAttr, Text.pack $ show name)
-    eventMap . at name ?= h
+    modify $ \s -> s
+        { nextName = name + 1
+        , eventMap = HashMap.insert name h (eventMap s)
+        }
 
-dispatch :: DOMElement -> Value -> Mount ()
-dispatch e ev = do
-    name <- read . Text.unpack <$> call e "getAttribute" nameAttr
-    r <- use (eventMap . at name)
-    case r of
-        Nothing -> return ()
-        Just h  -> liftIO $ h ev
+dispatch :: DOMElement -> Text -> Value -> Mount ()
+dispatch e eventName obj = do
+    field <- call e "getAttribute" nameAttr
+    m <- gets eventMap
+    fromMaybe (return ()) $ do
+        name <- readMaybe (Text.unpack field)
+        hs   <- HashMap.lookup name m
+        h    <- HashMap.lookup eventName hs
+        return $ liftIO (h obj)
+  where
+    readMaybe s = case reads s of
+        [(a,"")] -> Just a
+        _        -> Nothing
 
-update :: [Element] -> Mount ()
-update new = do
+update :: Html -> Mount ()
+update html = do
+    let new = fromHtml html
     doc <- global "document"
     body <- getProp doc "body"
-    eventMap .= HashMap.empty
+    modify $ \s -> s { eventMap = HashMap.empty }
     removeChildren body
     createChildren body new
 
 create :: Element -> Mount DOMElement
-create (Element t attrs h cs) = do
+create (Element t attrs cs) = do
     doc <- global "document"
     e <- call doc "createElement" t
-    register e h
-    forM_ (HashMap.toList attrs) $ \(k, v) ->
+    register e (handlers attrs)
+    forM_ (HashMap.toList $ attributes attrs) $ \(k, v) ->
         ignore $ apply e "setAttribute" (k, v)
     createChildren e cs
     return e
