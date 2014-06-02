@@ -5,6 +5,7 @@ module Alder.Html.Internal
       -- * Event handlers
     , Handlers
     , Handler(..)
+    , Event(..)
       -- * Attributes
     , Attributes(..)
     , Attribute(..)
@@ -18,7 +19,7 @@ module Alder.Html.Internal
     ) where
 
 import           Control.Applicative
-import           Data.Aeson
+import           Data.Aeson.Types
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
 import           Data.String
@@ -63,6 +64,9 @@ type Handlers = HashMap Text (Value -> IO ())
 
 class Handler f where
     fire :: f e -> e -> IO ()
+
+class Event e where
+    extractEvent :: Value -> Parser e
 
 data Attributes = Attributes
     { attributes :: !(HashMap Text Text)
@@ -109,11 +113,11 @@ attribute k v = Attribute $ \a -> a { attributes = update (attributes a) }
 boolean :: Text -> Attribute
 boolean k = attribute k Text.empty
 
-onEvent :: (Handler f, FromJSON e) => Text -> f e -> Attribute
+onEvent :: (Handler f, Event e) => Text -> f e -> Attribute
 onEvent k handler = Attribute $ \a ->
     a { handlers = HashMap.insert k h (handlers a) }
   where
-    h v = case fromJSON v of
+    h v = case parse extractEvent v of
         Error s   -> fail s
         Success e -> fire handler e
 

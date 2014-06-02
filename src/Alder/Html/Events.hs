@@ -13,6 +13,8 @@ import           Data.Aeson
 import           Data.Maybe
 import           Data.Set            as Set
 
+import           Alder.Html.Internal
+
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
@@ -34,8 +36,8 @@ data MouseEvent = MouseEvent
     , screenPosition :: !Position
     }
 
-instance FromJSON MouseEvent where
-    parseJSON = withObject "mouse event" $ \ev -> do
+instance Event MouseEvent where
+    extractEvent = withObject "mouse event" $ \ev -> do
         enum <- ev .: "button"
         evButton <- case enum :: Int of
             0 -> return LeftButton
