@@ -133,8 +133,7 @@ event_declaration = '''
 outfile.write(header)
 
 for attr in sorted(attributes + list(events)):
-    attr = camelCase(attr)
-    attr_ = unreserved(attr)
+    attr_ = unreserved(camelCase(attr))
     if attr in events:
         eventType = events[attr]
         eventName = attr[2:]

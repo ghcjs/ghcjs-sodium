@@ -13,9 +13,9 @@ import           Alder.Html.Internal
 accept :: Text -> Attribute
 accept = attribute "accept"
 
--- | The @acceptCharset@ attribute.
+-- | The @accept-charset@ attribute.
 acceptCharset :: Text -> Attribute
-acceptCharset = attribute "acceptCharset"
+acceptCharset = attribute "accept-charset"
 
 -- | The @accesskey@ attribute.
 accesskey :: Text -> Attribute
@@ -173,9 +173,9 @@ href = attribute "href"
 hreflang :: Text -> Attribute
 hreflang = attribute "hreflang"
 
--- | The @httpEquiv@ attribute.
+-- | The @http-equiv@ attribute.
 httpEquiv :: Text -> Attribute
-httpEquiv = attribute "httpEquiv"
+httpEquiv = attribute "http-equiv"
 
 -- | The @icon@ attribute.
 icon :: Text -> Attribute
