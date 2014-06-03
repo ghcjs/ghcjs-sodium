@@ -23,7 +23,6 @@ import           Control.Applicative
 import           Data.Aeson.Types
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
-import           Data.String
 import           Data.Text           as Text
 import           Unsafe.Coerce
 
@@ -54,9 +53,6 @@ instance Monad HtmlM where
     return _ = Empty
     (>>)     = appendHtml
     m >>= k  = m `appendHtml` k (error "Alder.HtmlM: monadic bind")
-
-instance IsString (HtmlM a) where
-    fromString = Content . fromString
 
 appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
 appendHtml a b = unsafeCoerce a `Append` unsafeCoerce b
