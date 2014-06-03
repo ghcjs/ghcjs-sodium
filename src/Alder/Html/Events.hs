@@ -46,7 +46,7 @@ data KeyboardEvent = KeyboardEvent
     { key               :: !Char
     , keyboardModifiers :: !(Set Modifier)
     , location          :: !Location
-    , locale            :: !Text
+    , locale            :: !(Maybe Text)
     , repeat            :: !Bool
     } deriving (Eq, Read, Show)
 

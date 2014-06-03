@@ -37,19 +37,23 @@ var Events = (function() {
 
     var trapChangeEvent = trapEvent(function (event) {
         var target = event.target;
+        var eventObj = {
+            checked: target.checked,
+            value:   target.value
+        };
+
         var prevChecked = target.getAttribute('checked') ? true : false;
-        var prevValue = target.getAttribute('value');
+        var prevValue   = target.getAttribute('value');
         if (prevValue === null) {
             prevValue = '';
         }
+
         target.checked = prevChecked;
         if (target.value !== prevValue) {
             target.value = prevValue;
         }
-        return {
-            checked: target.checked,
-            value:   target.value
-        };
+
+        return eventObj;
     });
 
     var trapMouseEvent = trapEvent(function (event) {
@@ -76,24 +80,24 @@ var Events = (function() {
             metaKey:  event.metaKey,
             shiftKey: event.shiftKey,
             clientX:  event.clientX,
-            clientX:  event.clientX,
+            clientY:  event.clientY,
             pageX:    pageX,
             pageY:    pageY,
             screenX:  event.screenX,
-            screenX:  event.screenY
+            screenY:  event.screenY
         };
     });
 
     var events = {
-        onkeydown   : trapKeyboardEvent,
-        onkeypress  : trapKeyboardEvent,
-        onkeyup     : trapKeyboardEvent,
-        oninput     : trapInputEvent,
-        onchange    : trapChangeEvent,
-        onclick     : trapMouseEvent,
-        ondblclick  : trapMouseEvent,
-        onmousedown : trapMouseEvent,
-        onmouseup   : trapMouseEvent
+        keydown   : trapKeyboardEvent,
+        keypress  : trapKeyboardEvent,
+        keyup     : trapKeyboardEvent,
+        input     : trapInputEvent,
+        change    : trapChangeEvent,
+        click     : trapMouseEvent,
+        dblclick  : trapMouseEvent,
+        mousedown : trapMouseEvent,
+        mouseup   : trapMouseEvent
     }
 
     return {
