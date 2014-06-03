@@ -265,6 +265,10 @@ onclick = onEvent "click"
 ondblclick :: Handler f => f E.MouseEvent -> Attribute
 ondblclick = onEvent "dblclick"
 
+-- | Set the handler for the @input@ event.
+oninput :: Handler f => f E.FormEvent -> Attribute
+oninput = onEvent "input"
+
 -- | Set the handler for the @keydown@ event.
 onkeydown :: Handler f => f E.KeyboardEvent -> Attribute
 onkeydown = onEvent "keydown"

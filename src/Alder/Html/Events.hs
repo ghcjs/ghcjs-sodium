@@ -5,6 +5,8 @@ module Alder.Html.Events
       Modifier(..)
     , Location(..)
     , KeyboardEvent(..)
+      -- * Form events
+    , FormEvent(..)
       -- * Mouse events
     , Button(..)
     , Position(..)
@@ -56,6 +58,17 @@ instance Event KeyboardEvent where
             <*> (toEnum <$> ev .: "location")
             <*> ev .: "locale"
             <*> ev .: "repeat"
+
+data FormEvent = FormEvent
+    { checked :: !Bool
+    , value   :: !Text
+    }
+
+instance Event FormEvent where
+    extractEvent = withObject "form event" $ \ev ->
+        FormEvent
+            <$> ev .: "checked"
+            <*> ev .: "value"
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton

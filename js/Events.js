@@ -27,6 +27,14 @@ var Events = (function() {
         };
     });
 
+    var trapInputEvent = trapEvent(function (event) {
+        var target = event.target;
+        return {
+            checked: target.checked,
+            value:   target.value
+        }
+    });
+
     var trapMouseEvent = trapEvent(function (event) {
         var button = event.button;
         if (!('which' in event)) {
@@ -63,6 +71,7 @@ var Events = (function() {
         onkeydown   : trapKeyboardEvent,
         onkeypress  : trapKeyboardEvent,
         onkeyup     : trapKeyboardEvent,
+        oninput     : trapInputEvent,
         onclick     : trapMouseEvent,
         ondblclick  : trapMouseEvent,
         onmousedown : trapMouseEvent,
