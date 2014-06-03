@@ -257,6 +257,10 @@ name = attribute "name"
 novalidate :: Attribute
 novalidate = boolean "novalidate"
 
+-- | Set the handler for the @change@ event.
+onchange :: Handler f => f E.FormEvent -> Attribute
+onchange = onEvent "change"
+
 -- | Set the handler for the @click@ event.
 onclick :: Handler f => f E.MouseEvent -> Attribute
 onclick = onEvent "click"

@@ -32,7 +32,24 @@ var Events = (function() {
         return {
             checked: target.checked,
             value:   target.value
+        };
+    });
+
+    var trapChangeEvent = trapEvent(function (event) {
+        var target = event.target;
+        var prevChecked = target.getAttribute('checked') ? true : false;
+        var prevValue = target.getAttribute('value');
+        if (prevValue === null) {
+            prevValue = '';
         }
+        target.checked = prevChecked;
+        if (target.value !== prevValue) {
+            target.value = prevValue;
+        }
+        return {
+            checked: target.checked,
+            value:   target.value
+        };
     });
 
     var trapMouseEvent = trapEvent(function (event) {
@@ -72,6 +89,7 @@ var Events = (function() {
         onkeypress  : trapKeyboardEvent,
         onkeyup     : trapKeyboardEvent,
         oninput     : trapInputEvent,
+        onchange    : trapChangeEvent,
         onclick     : trapMouseEvent,
         ondblclick  : trapMouseEvent,
         onmousedown : trapMouseEvent,

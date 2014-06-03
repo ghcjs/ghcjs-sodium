@@ -97,6 +97,7 @@ events = {
     'onkeypress'  : 'KeyboardEvent',
     'onkeyup'     : 'KeyboardEvent',
     'oninput'     : 'FormEvent',
+    'onchange'    : 'FormEvent',
     'onclick'     : 'MouseEvent',
     'ondblclick'  : 'MouseEvent',
     'onmousedown' : 'MouseEvent',
