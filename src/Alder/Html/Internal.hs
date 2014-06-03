@@ -2,6 +2,7 @@ module Alder.Html.Internal
     ( -- * HTML
       Html
     , HtmlM(..)
+    , ToHtml(..)
       -- * Event handlers
     , Handlers
     , Handler(..)
@@ -59,6 +60,18 @@ instance IsString (HtmlM a) where
 
 appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
 appendHtml a b = unsafeCoerce a `Append` unsafeCoerce b
+
+class ToHtml a where
+    toHtml :: a -> Html
+
+instance ToHtml (HtmlM a) where
+    toHtml = unsafeCoerce
+
+instance ToHtml a => ToHtml [a] where
+    toHtml = mconcat . fmap toHtml
+
+instance ToHtml Text where
+    toHtml = Content
 
 type Handlers = HashMap Text (Value -> IO ())
 
