@@ -1,7 +1,7 @@
 module Alder.Html
     ( Html
     , HtmlM
-    , ToHtml(..)
+    , text
     , Handler(..)
     , Attribute
     , Attributable
