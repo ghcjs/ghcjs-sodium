@@ -5,19 +5,19 @@ module Alder.JavaScript
     ( JSValue(..)
     , JSArgs(..)
     , global
-    , getProp
-    , setProp
+    , readProp
+    , writeProp
     , call
     , apply
     ) where
 
 import           Control.Applicative
 import           Control.Monad.Trans
+import           Data.Aeson
 import           Data.Maybe
-import           Data.Text          (Text)
-import qualified Data.Text          as Text
+import           Data.Text          as Text
 
-import           GHCJS.Foreign      hiding (getProp, setProp)
+import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
 
@@ -55,6 +55,10 @@ instance JSValue Text where
         convert 4 = fromJSString (castRef ref)
         convert _ = Text.empty
 
+instance JSValue Value where
+    toJSValue   = fmap castRef . toJSRef
+    fromJSValue = fmap (fromMaybe Null) <$> fromJSRef . castRef
+
 class JSArgs a where
     applyFunction :: JSRef b -> JSString -> a -> IO (JSRef c)
 
@@ -80,14 +84,14 @@ global prop = liftIO $ do
     fromJSValue a
 
 -- | Get a property value.
-getProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> m b
-getProp obj prop = liftIO $ do
+readProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> m b
+readProp obj prop = liftIO $ do
     res <- unsafeGetProp prop obj
     fromJSValue res
 
 -- | Set a property value.
-setProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> b -> m ()
-setProp obj prop b = liftIO $ do
+writeProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> b -> m ()
+writeProp obj prop b = liftIO $ do
     val <- toJSValue b
     unsafeSetProp prop val obj
 

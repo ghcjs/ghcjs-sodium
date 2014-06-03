@@ -1,3 +1,4 @@
+
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Alder.Mount
@@ -13,6 +14,7 @@ import           Data.IORef
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text                 as Text
+import           GHCJS.Foreign
 import           GHCJS.Types
 
 import           Alder.Html.Internal
@@ -59,7 +61,19 @@ mount = do
         { nextName = 0
         , eventMap = HashMap.empty
         }
+    listen $ \target eventName obj ->
+        runIOState (dispatch target eventName obj) ref
     return $ \html -> runIOState (update html) ref
+
+listen :: (DOMElement -> Text -> Value -> IO ()) -> IO ()
+listen callback = do
+    events <- global "Events"
+    jsCallback <- syncCallback1 AlwaysRetain False $ \params -> do
+        target    <- readProp params "target"
+        eventName <- readProp params "eventName"
+        obj       <- readProp params "eventObject"
+        callback target eventName obj
+    ignore $ call events "listen" jsCallback
 
 nameAttr :: Text
 nameAttr = "data-alder-id"
@@ -74,8 +88,8 @@ register e h = do
         }
 
 dispatch :: DOMElement -> Text -> Value -> Mount ()
-dispatch e eventName obj = do
-    field <- call e "getAttribute" nameAttr
+dispatch target eventName obj = do
+    field <- call target "getAttribute" nameAttr
     m <- gets eventMap
     fromMaybe (return ()) $ do
         name <- readMaybe (Text.unpack field)
@@ -91,7 +105,7 @@ update :: Html -> Mount ()
 update html = do
     let new = fromHtml html
     doc <- global "document"
-    body <- getProp doc "body"
+    body <- readProp doc "body"
     modify $ \s -> s { eventMap = HashMap.empty }
     removeChildren body
     createChildren body new
@@ -119,7 +133,7 @@ removeChildren :: DOMElement -> Mount ()
 removeChildren parent = go
   where
     go = do
-        r <- getProp parent "lastChild"
+        r <- readProp parent "lastChild"
         case r of
             Nothing -> return ()
             Just c  -> do

@@ -3,7 +3,11 @@ var Events = (function() {
     function trapEvent(eventName, extractor, callback) {
         document.addEventListener(eventName, function(e) {
             var obj = extractor(eventName, e);
-            callback(e.target, eventName, obj);
+            callback({
+                target: e.target,
+                eventName: eventName,
+                eventObject: obj
+            });
         });
     }
 
@@ -41,10 +45,10 @@ var Events = (function() {
 
     return {
         listen: function (callback) {
-            trapEvent('click', extractMouseEvent, callback);
-            trapEvent('dblclick', extractMouseEvent, callback);
+            trapEvent('click'    , extractMouseEvent, callback);
+            trapEvent('dblclick' , extractMouseEvent, callback);
             trapEvent('mousedown', extractMouseEvent, callback);
-            trapEvent('mouseup', extractMouseEvent, callback);
+            trapEvent('mouseup'  , extractMouseEvent, callback);
         }
     };
 
