@@ -62,6 +62,11 @@ instance JSValue Value where
 class JSArgs a where
     applyFunction :: JSRef b -> JSString -> a -> IO (JSRef c)
 
+instance JSArgs () where
+    applyFunction obj fun () = do
+        res <- apply0 obj fun
+        fromJSValue res
+
 instance (JSValue a, JSValue b) => JSArgs (a, b) where
     applyFunction obj fun (a, b) = do
         arg1 <- toJSValue a
@@ -110,6 +115,9 @@ apply obj fun b = liftIO $ do
 
 foreign import javascript unsafe "$r = window[$1];"
     getGlobal :: JSString -> IO (JSRef a)
+
+foreign import javascript unsafe "$r = $1[$2]();"
+    apply0 :: JSRef a -> JSString -> IO (JSRef b)
 
 foreign import javascript unsafe "$r = $1[$2]($3);"
     apply1 :: JSRef a -> JSString -> JSRef b -> IO (JSRef c)
