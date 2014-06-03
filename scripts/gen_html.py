@@ -61,7 +61,7 @@ outfile.write(header)
 
 for tag in html_tags:
     tag_ = unreserved(tag)
-    if tag in void_tags:
+    if tag not in void_tags:
         outfile.write(html_declaration.format(tag, tag_))
     else:
         outfile.write(void_declaration.format(tag, tag_))
