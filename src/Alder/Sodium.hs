@@ -1,6 +1,7 @@
 module Alder.Sodium
     ( Input(..)
     , newInput
+    , filterInput
     , mount
     , select
     , (<@>)
@@ -33,6 +34,9 @@ instance Handler Input where
 
 newInput :: Reactive (Event a, Input a)
 newInput = second Input <$> newEvent
+
+filterInput :: (a -> Bool) -> Input a -> Input a
+filterInput p (Input f) = Input $ \a -> if p a then f a else return ()
 
 mount :: Behavior Html -> IO ()
 mount b = do
