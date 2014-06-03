@@ -93,6 +93,9 @@ pubdate readonly required reversed seamless scoped spellcheck
 '''.split()
 
 events = {
+    'onkeydown'   : 'KeyboardEvent',
+    'onkeypress'  : 'KeyboardEvent',
+    'onkeyup'     : 'KeyboardEvent',
     'onclick'     : 'MouseEvent',
     'ondblclick'  : 'MouseEvent',
     'onmousedown' : 'MouseEvent',

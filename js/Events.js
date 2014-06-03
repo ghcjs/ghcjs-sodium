@@ -1,17 +1,33 @@
 var Events = (function() {
 
-    function trapEvent(eventName, extractor, callback) {
-        document.addEventListener(eventName, function(e) {
-            var obj = extractor(eventName, e);
-            callback({
-                target: e.target,
-                eventName: eventName,
-                eventObject: obj
+    function trapEvent(extractor) {
+        return function (eventName, callback) {
+            document.addEventListener(eventName, function(e) {
+                var obj = extractor(e);
+                callback({
+                    target: e.target,
+                    eventName: eventName,
+                    eventObject: obj
+                });
             });
-        });
+        };
     }
 
-    function extractMouseEvent(eventName, event) {
+    var trapKeyboardEvent = trapEvent(function (event) {
+        var key = event.keyCode || event.charCode;
+        return {
+            key:      key,
+            altKey:   event.altKey,
+            ctrlKey:  event.ctrlKey,
+            metaKey:  event.metaKey,
+            shiftKey: event.shiftKey,
+            location: event.location,
+            locale:   event.locale,
+            repeat:   event.repeat
+        };
+    });
+
+    var trapMouseEvent = trapEvent(function (event) {
         var button = event.button;
         if (!('which' in event)) {
             // IE<9
@@ -41,14 +57,24 @@ var Events = (function() {
             screenX:  event.screenX,
             screenX:  event.screenY
         };
+    });
+
+    var events = {
+        onkeydown   : trapKeyboardEvent,
+        onkeypress  : trapKeyboardEvent,
+        onkeyup     : trapKeyboardEvent,
+        onclick     : trapMouseEvent,
+        ondblclick  : trapMouseEvent,
+        onmousedown : trapMouseEvent,
+        onmouseup   : trapMouseEvent
     }
 
     return {
         listen: function (callback) {
-            trapEvent('click'    , extractMouseEvent, callback);
-            trapEvent('dblclick' , extractMouseEvent, callback);
-            trapEvent('mousedown', extractMouseEvent, callback);
-            trapEvent('mouseup'  , extractMouseEvent, callback);
+            for (eventName in events) {
+                var trapper = events[eventName];
+                trapper(eventName, callback);
+            }
         }
     };
 
