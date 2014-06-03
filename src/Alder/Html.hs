@@ -1,6 +1,7 @@
 module Alder.Html
     ( Html
     , HtmlM
+    , Handler(..)
     , Attribute
     , Attributable
     , (!)

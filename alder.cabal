@@ -32,8 +32,10 @@ library
     aeson,
     base,
     containers,
+    contravariant,
     ghcjs-base,
     mtl,
+    sodium,
     text,
     unordered-containers
 
@@ -43,6 +45,7 @@ library
     Alder.Html.Elements
     Alder.Html.Events
     Alder.Mount
+    Alder.Sodium
 
   other-modules:
     Alder.Html.Internal
