@@ -289,6 +289,10 @@ onkeyup = onEvent "keyup"
 onmousedown :: Handler f => f E.MouseEvent -> Attribute
 onmousedown = onEvent "mousedown"
 
+-- | Set the handler for the @mousemove@ event.
+onmousemove :: Handler f => f E.MouseEvent -> Attribute
+onmousemove = onEvent "mousemove"
+
 -- | Set the handler for the @mouseup@ event.
 onmouseup :: Handler f => f E.MouseEvent -> Attribute
 onmouseup = onEvent "mouseup"

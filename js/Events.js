@@ -94,10 +94,11 @@ var Events = (function() {
         keyup     : trapKeyboardEvent,
         input     : trapInputEvent,
         change    : trapChangeEvent,
+        mousedown : trapMouseEvent,
+        mouseup   : trapMouseEvent,
         click     : trapMouseEvent,
         dblclick  : trapMouseEvent,
-        mousedown : trapMouseEvent,
-        mouseup   : trapMouseEvent
+        mousemove : trapMouseEvent
     }
 
     return {

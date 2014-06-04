@@ -98,10 +98,11 @@ events = {
     'onkeyup'     : 'KeyboardEvent',
     'oninput'     : 'FormEvent',
     'onchange'    : 'FormEvent',
+    'onmousedown' : 'MouseEvent',
+    'onmouseup'   : 'MouseEvent',
     'onclick'     : 'MouseEvent',
     'ondblclick'  : 'MouseEvent',
-    'onmousedown' : 'MouseEvent',
-    'onmouseup'   : 'MouseEvent'
+    'onmousemove' : 'MouseEvent'
 }
 
 header = '''\
