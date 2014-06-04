@@ -103,7 +103,9 @@ events = {
     'onmouseup'   : 'MouseEvent',
     'onclick'     : 'MouseEvent',
     'ondblclick'  : 'MouseEvent',
-    'onmousemove' : 'MouseEvent'
+    'onmousemove' : 'MouseEvent',
+    'onmouseenter': 'MouseEvent',
+    'onmouseleave': 'MouseEvent'
 }
 
 header = '''\
