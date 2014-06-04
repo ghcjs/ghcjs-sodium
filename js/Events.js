@@ -1,16 +1,26 @@
 var Events = (function() {
     "use strict";
 
-    function trapEvent(eventName, extractor) {
+    var isOldIE = !('addEventListener' in document);
+
+    function listenTo(eventName, handler, useCapture) {
+        if (isOldIE) {
+            document.attachEvent('on' + eventName, handler);
+        } else {
+            document.addEventListener(eventName, handler, useCapture);
+        }
+    }
+
+    function trapEvent(eventName, extractor, useCapture) {
         return function (callback) {
-            document.addEventListener(eventName, function(e) {
+            listenTo(eventName, function(e) {
                 var obj = extractor(e);
                 callback({
                     target: e.target,
                     eventName: eventName,
                     eventObject: obj
                 });
-            });
+            }, useCapture);
         };
     }
 
@@ -30,44 +40,63 @@ var Events = (function() {
         });
     }
 
-    var trapInputEvent = trapEvent('input', function (e) {
-        var target = e.target;
-        return {
-            checked: target.checked,
-            value:   target.value
-        };
-    });
+    function trapFocusEvent() {
+        var eventName = isOldIE ? 'focusin' : 'focus';
+        return trapEvent(eventName, function () {
+            return {};
+        }, true);
+    }
 
-    var trapChangeEvent = trapEvent('change', function (e) {
-        var target = e.target;
-        var eventObj = {
-            checked: target.checked,
-            value:   target.value
-        };
+    function trapBlurEvent() {
+        var eventName = isOldIE ? 'focusout' : 'blur';
+        return trapEvent(eventName, function () {
+            return {};
+        }, true);
+    }
 
-        var prevChecked = target.getAttribute('checked') ? true : false;
-        var prevValue   = target.getAttribute('value');
-        if (prevValue === null) {
-            prevValue = '';
-        }
+    function trapInputEvent() {
+        return trapEvent('input', function (e) {
+            var target = e.target;
+            return {
+                checked: target.checked,
+                value:   target.value
+            };
+        });
+    }
 
-        target.checked = prevChecked;
-        if (target.value !== prevValue) {
-            target.value = prevValue;
-        }
+    function trapChangeEvent() {
+        return trapEvent('change', function (e) {
+            var target = e.target;
+            var eventObj = {
+                checked: target.checked,
+                value:   target.value
+            };
 
-        return eventObj;
-    });
+            var prevChecked = target.getAttribute('checked') ? true : false;
+            var prevValue   = target.getAttribute('value');
+            if (prevValue === null) {
+                prevValue = '';
+            }
 
-    var trapSubmitEvent = trapEvent('submit', function () {
-        return {};
-    });
+            target.checked = prevChecked;
+            if (target.value !== prevValue) {
+                target.value = prevValue;
+            }
+
+            return eventObj;
+        });
+    }
+
+    function trapSubmitEvent() {
+        return trapEvent('submit', function () {
+            return {};
+        });
+    }
 
     function trapMouseEvent(eventName) {
         return trapEvent(eventName, function (e) {
             var button = e.button;
-            if (!('which' in e)) {
-                // IE<9
+            if (isOldIE) {
                 button = button === 2 ? 2 : button === 4 ? 1 : 0;
             }
 
@@ -101,9 +130,11 @@ var Events = (function() {
         keydown   : trapKeyboardEvent('keydown'),
         keypress  : trapKeyboardEvent('keypress'),
         keyup     : trapKeyboardEvent('keyup'),
-        input     : trapInputEvent,
-        change    : trapChangeEvent,
-        submit    : trapSubmitEvent,
+        focus     : trapFocusEvent(),
+        blur      : trapBlurEvent(),
+        input     : trapInputEvent(),
+        change    : trapChangeEvent(),
+        submit    : trapSubmitEvent(),
         mousedown : trapMouseEvent('mousedown'),
         mouseup   : trapMouseEvent('mouseup'),
         click     : trapMouseEvent('click'),

@@ -5,6 +5,8 @@ module Alder.Html.Events
       Modifier(..)
     , Location(..)
     , KeyboardEvent(..)
+      -- * Focus events
+    , FocusEvent(..)
       -- * Input events
     , InputEvent(..)
       -- * Submit events
@@ -71,6 +73,11 @@ instance Event InputEvent where
         InputEvent
             <$> ev .: "checked"
             <*> ev .: "value"
+
+data FocusEvent = FocusEvent deriving (Eq, Read, Show)
+
+instance Event FocusEvent where
+    extractEvent = withObject "submit event" $ \_ -> pure FocusEvent
 
 data SubmitEvent = SubmitEvent deriving (Eq, Read, Show)
 
