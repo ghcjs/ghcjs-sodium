@@ -257,6 +257,10 @@ name = attribute "name"
 novalidate :: Attribute
 novalidate = boolean "novalidate"
 
+-- | Set the handler for the @blur@ event.
+onblur :: Handler f => f E.FocusEvent -> Attribute
+onblur = onEvent "blur"
+
 -- | Set the handler for the @change@ event.
 onchange :: Handler f => f E.InputEvent -> Attribute
 onchange = onEvent "change"
@@ -268,6 +272,10 @@ onclick = onEvent "click"
 -- | Set the handler for the @dblclick@ event.
 ondblclick :: Handler f => f E.MouseEvent -> Attribute
 ondblclick = onEvent "dblclick"
+
+-- | Set the handler for the @focus@ event.
+onfocus :: Handler f => f E.FocusEvent -> Attribute
+onfocus = onEvent "focus"
 
 -- | Set the handler for the @input@ event.
 oninput :: Handler f => f E.InputEvent -> Attribute
