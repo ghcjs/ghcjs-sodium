@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Alder.Html.Elements where
+module Alder.Html5 where
 
 import           Alder.Html.Internal
 
