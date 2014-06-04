@@ -99,7 +99,6 @@ events = {
     'onfocus'     : 'FocusEvent',
     'onblur'      : 'FocusEvent',
     'oninput'     : 'InputEvent',
-    'onchange'    : 'InputEvent',
     'onsubmit'    : 'SubmitEvent',
     'onmousedown' : 'MouseEvent',
     'onmouseup'   : 'MouseEvent',

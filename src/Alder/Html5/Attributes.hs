@@ -261,10 +261,6 @@ novalidate = boolean "novalidate"
 onblur :: Handler f => f E.FocusEvent -> Attribute
 onblur = onEvent "blur"
 
--- | Set the handler for the @change@ event.
-onchange :: Handler f => f E.InputEvent -> Attribute
-onchange = onEvent "change"
-
 -- | Set the handler for the @click@ event.
 onclick :: Handler f => f E.MouseEvent -> Attribute
 onclick = onEvent "click"

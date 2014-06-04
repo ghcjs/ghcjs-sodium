@@ -64,29 +64,6 @@ var Events = (function() {
         });
     }
 
-    function trapChangeEvent() {
-        return trapEvent('change', function (e) {
-            var target = e.target;
-            var eventObj = {
-                checked: target.checked,
-                value:   target.value
-            };
-
-            var prevChecked = target.getAttribute('checked') ? true : false;
-            var prevValue   = target.getAttribute('value');
-            if (prevValue === null) {
-                prevValue = '';
-            }
-
-            target.checked = prevChecked;
-            if (target.value !== prevValue) {
-                target.value = prevValue;
-            }
-
-            return eventObj;
-        });
-    }
-
     function trapSubmitEvent() {
         return trapEvent('submit', function () {
             return {};
@@ -133,7 +110,6 @@ var Events = (function() {
         focus     : trapFocusEvent(),
         blur      : trapBlurEvent(),
         input     : trapInputEvent(),
-        change    : trapChangeEvent(),
         submit    : trapSubmitEvent(),
         mousedown : trapMouseEvent('mousedown'),
         mouseup   : trapMouseEvent('mouseup'),
