@@ -258,7 +258,7 @@ novalidate :: Attribute
 novalidate = boolean "novalidate"
 
 -- | Set the handler for the @change@ event.
-onchange :: Handler f => f E.FormEvent -> Attribute
+onchange :: Handler f => f E.InputEvent -> Attribute
 onchange = onEvent "change"
 
 -- | Set the handler for the @click@ event.
@@ -270,7 +270,7 @@ ondblclick :: Handler f => f E.MouseEvent -> Attribute
 ondblclick = onEvent "dblclick"
 
 -- | Set the handler for the @input@ event.
-oninput :: Handler f => f E.FormEvent -> Attribute
+oninput :: Handler f => f E.InputEvent -> Attribute
 oninput = onEvent "input"
 
 -- | Set the handler for the @keydown@ event.
@@ -296,6 +296,10 @@ onmousemove = onEvent "mousemove"
 -- | Set the handler for the @mouseup@ event.
 onmouseup :: Handler f => f E.MouseEvent -> Attribute
 onmouseup = onEvent "mouseup"
+
+-- | Set the handler for the @submit@ event.
+onsubmit :: Handler f => f E.SubmitEvent -> Attribute
+onsubmit = onEvent "submit"
 
 -- | The @open@ attribute.
 open :: Attribute

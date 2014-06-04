@@ -5,8 +5,10 @@ module Alder.Html.Events
       Modifier(..)
     , Location(..)
     , KeyboardEvent(..)
-      -- * Form events
-    , FormEvent(..)
+      -- * Input events
+    , InputEvent(..)
+      -- * Submit events
+    , SubmitEvent(..)
       -- * Mouse events
     , Button(..)
     , Position(..)
@@ -59,16 +61,21 @@ instance Event KeyboardEvent where
             <*> ev .: "locale"
             <*> ev .: "repeat"
 
-data FormEvent = FormEvent
+data InputEvent = InputEvent
     { checked :: !Bool
     , value   :: !Text
-    }
+    } deriving (Eq, Read, Show)
 
-instance Event FormEvent where
+instance Event InputEvent where
     extractEvent = withObject "form event" $ \ev ->
-        FormEvent
+        InputEvent
             <$> ev .: "checked"
             <*> ev .: "value"
+
+data SubmitEvent = SubmitEvent deriving (Eq, Read, Show)
+
+instance Event SubmitEvent where
+    extractEvent = withObject "submit event" $ \_ -> pure SubmitEvent
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton

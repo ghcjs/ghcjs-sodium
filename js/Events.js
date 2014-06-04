@@ -13,30 +13,30 @@ var Events = (function() {
         };
     }
 
-    var trapKeyboardEvent = trapEvent(function (event) {
-        var key = event.keyCode || event.charCode;
+    var trapKeyboardEvent = trapEvent(function (e) {
+        var key = e.keyCode || e.charCode;
         return {
             key:      key,
-            altKey:   event.altKey,
-            ctrlKey:  event.ctrlKey,
-            metaKey:  event.metaKey,
-            shiftKey: event.shiftKey,
-            location: event.location,
-            locale:   event.locale,
-            repeat:   event.repeat
+            altKey:   e.altKey,
+            ctrlKey:  e.ctrlKey,
+            metaKey:  e.metaKey,
+            shiftKey: e.shiftKey,
+            location: e.location,
+            locale:   e.locale,
+            repeat:   e.repeat
         };
     });
 
-    var trapInputEvent = trapEvent(function (event) {
-        var target = event.target;
+    var trapInputEvent = trapEvent(function (e) {
+        var target = e.target;
         return {
             checked: target.checked,
             value:   target.value
         };
     });
 
-    var trapChangeEvent = trapEvent(function (event) {
-        var target = event.target;
+    var trapChangeEvent = trapEvent(function (e) {
+        var target = e.target;
         var eventObj = {
             checked: target.checked,
             value:   target.value
@@ -56,35 +56,39 @@ var Events = (function() {
         return eventObj;
     });
 
-    var trapMouseEvent = trapEvent(function (event) {
-        var button = event.button;
-        if (!('which' in event)) {
+    var trapSubmitEvent = trapEvent(function (e) {
+        return {};
+    });
+
+    var trapMouseEvent = trapEvent(function (e) {
+        var button = e.button;
+        if (!('which' in e)) {
             // IE<9
             button = button === 2 ? 2 : button === 4 ? 1 : 0;
         }
 
-        var pageX = 'pageX' in event ?
-            event.pageX :
-            event.clientX + document.body.scrollLeft +
+        var pageX = 'pageX' in e ?
+            e.pageX :
+            e.clientX + document.body.scrollLeft +
                 document.documentElement.scrollLeft;
 
-        var pageY = 'pageY' in event ?
-            event.pageY :
-            event.clientY + document.body.scrollTop +
+        var pageY = 'pageY' in e ?
+            e.pageY :
+            e.clientY + document.body.scrollTop +
                 document.documentElement.scrollTop;
 
         return {
             button:   button,
-            altKey:   event.altKey,
-            ctrlKey:  event.ctrlKey,
-            metaKey:  event.metaKey,
-            shiftKey: event.shiftKey,
-            clientX:  event.clientX,
-            clientY:  event.clientY,
+            altKey:   e.altKey,
+            ctrlKey:  e.ctrlKey,
+            metaKey:  e.metaKey,
+            shiftKey: e.shiftKey,
+            clientX:  e.clientX,
+            clientY:  e.clientY,
             pageX:    pageX,
             pageY:    pageY,
-            screenX:  event.screenX,
-            screenY:  event.screenY
+            screenX:  e.screenX,
+            screenY:  e.screenY
         };
     });
 
@@ -94,6 +98,7 @@ var Events = (function() {
         keyup     : trapKeyboardEvent,
         input     : trapInputEvent,
         change    : trapChangeEvent,
+        submit    : trapSubmitEvent,
         mousedown : trapMouseEvent,
         mouseup   : trapMouseEvent,
         click     : trapMouseEvent,
