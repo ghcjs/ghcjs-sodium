@@ -1,4 +1,5 @@
 var Events = (function() {
+    "use strict";
 
     function trapEvent(eventName, extractor) {
         return function (callback) {
@@ -58,7 +59,7 @@ var Events = (function() {
         return eventObj;
     });
 
-    var trapSubmitEvent = trapEvent('submit', function (e) {
+    var trapSubmitEvent = trapEvent('submit', function () {
         return {};
     });
 
@@ -110,12 +111,15 @@ var Events = (function() {
         mousemove : trapMouseEvent('mousemove'),
         mouseenter: trapMouseEvent('mouseover'),
         mouseleave: trapMouseEvent('mouseout')
-    }
+    };
 
     return {
         listen: function (callback) {
+            var eventName;
             for (eventName in events) {
-                events[eventName](callback);
+                if (events.hasOwnProperty(eventName)) {
+                    events[eventName](callback);
+                }
             }
         }
     };
