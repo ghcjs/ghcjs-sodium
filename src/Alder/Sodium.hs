@@ -47,7 +47,7 @@ toListOf :: Getting (Endo [b]) a b -> a -> [b]
 toListOf l = flip appEndo [] . getConst . l (Const . Endo . (:))
 
 keep :: (a -> Bool) -> Input a -> Input a
-keep p (Input f) = Input $ \a -> if p a then f a else return ()
+keep p (Input f) = Input $ \a -> when (p a) $ f a
 
 pass :: Getting (Endo [b]) a b -> Input b -> Input a
 pass l (Input f) = Input $ \a -> mapM_ f (toListOf l a)
