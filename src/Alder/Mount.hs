@@ -21,33 +21,15 @@ import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript
 
-data NativeElement
+data NativeNode
 
-type DOMElement = JSRef NativeElement
-
-data Element
-    = Element !Text Attributes [Element]
-    | Text !Text
-
--- TODO: consolidate text nodes
-fromHtml :: HtmlM a -> [Element]
-fromHtml html = go mempty html []
-  where
-    go attrs m = case m of
-        Empty            -> id
-        Append a b       -> go attrs a . go attrs b
-        Parent t h       -> (Element t (applyAttributes attrs) (fromHtml h) :)
-        Leaf t           -> (Element t (applyAttributes attrs) [] :)
-        Content t        -> (Text t :)
-        AddAttribute a h -> go (a <> attrs) h
-
-    applyAttributes (Attribute f) = f mempty
+type DOMNode = JSRef NativeNode
 
 type Name = Int
 
 data MountState = MountState
     { nextName :: !Name
-    , eventMap :: !(HashMap Name Handlers)
+    , eventMap :: !(HashMap Name Element)
     }
 
 type Mount = IOState MountState

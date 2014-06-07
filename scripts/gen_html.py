@@ -48,13 +48,13 @@ import           Alder.Html.Internal
 html_declaration = '''
 -- | The HTML @{0}@ tag.
 {1} :: Html -> Html
-{1} = Parent "{0}"
+{1} = parent "{0}"
 '''
 
 void_declaration = '''
 -- | The HTML @{0}@ tag.
 {1} :: Html
-{1} = Leaf "{0}"
+{1} = leaf "{0}"
 '''
 
 outfile.write(header)

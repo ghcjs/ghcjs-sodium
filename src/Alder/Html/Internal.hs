@@ -1,52 +1,68 @@
 module Alder.Html.Internal
-    ( -- * HTML
-      Html
-    , HtmlM(..)
-    , text
-      -- * Event handlers
-    , Handlers
-    , Handler(..)
-    , Event(..)
+    ( -- * Elements
+      Node(..)
+    , Element(..)
       -- * Attributes
     , Attributes(..)
-    , Attribute(..)
+    , AttributeValue(..)
+      -- * Html
+    , Html
+    , HtmlM(..)
+    , runHtml
+    , parent
+    , leaf
+    , text
+      -- * Event handlers
+    , Handler(..)
+    , Event(..)
+      -- * Setting attributes
+    , Attribute
     , Attributable
     , (!)
     , (!?)
-      -- * Setting attributes
-    , attribute
+    , token
+    , tokenSet
     , boolean
     , onEvent
     ) where
 
 import           Control.Applicative
-import           Data.Aeson.Types
+import           Data.DList          as DList
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
 import           Data.Text           as Text
+import           GHCJS.Prim
 import           Unsafe.Coerce
 
 infixl 1 !, !?
 
+data AttributeValue
+    = Token !Text
+    | TokenSet [Text]
+    | Boolean
+    deriving (Eq, Read, Show)
+
+data Attributes = Attributes
+    { attributeValues :: !(HashMap Text AttributeValue)
+    , handlers        :: !(HashMap Text (JSRef a -> IO ()))
+    }
+
+data Element = Element !Text Attributes
+
+data Node
+    = Parent Element [Node]
+    | Text !Text
+
 type Html = HtmlM ()
 
-data HtmlM a
-    = Empty
-    | Append (HtmlM a) (HtmlM a)
-    | Parent !Text (HtmlM a)
-    | Leaf !Text
-    | Content Text
-    | AddAttribute Attribute (HtmlM a)
-
-instance Monoid (HtmlM a) where
-    mempty  = Empty
-    mappend = Append
+newtype HtmlM a = HtmlM (Attributes -> DList Node)
+    deriving (Monoid)
 
 instance Functor HtmlM where
     fmap _ = unsafeCoerce
 
 instance Applicative HtmlM where
-    pure _ = Empty
+    pure _ = mempty
     (<*>)  = appendHtml
 
 instance Monad HtmlM where
@@ -54,36 +70,34 @@ instance Monad HtmlM where
     (>>)     = appendHtml
     m >>= k  = m `appendHtml` k (error "Alder.HtmlM: monadic bind")
 
+runHtml :: HtmlM a -> [Node]
+runHtml (HtmlM f) = DList.toList (f defaultAttributes)
+  where
+    defaultAttributes = Attributes
+        { attributeValues = HashMap.empty
+        , handlers        = HashMap.empty
+        }
+
 appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
-appendHtml a b = unsafeCoerce a `Append` unsafeCoerce b
+appendHtml a b = unsafeCoerce a <> unsafeCoerce b
 
-text :: Text -> Html
-text = Content
+parent :: Text -> HtmlM a -> HtmlM a
+parent t h = HtmlM $ \a -> DList.singleton (Parent (Element t a) (runHtml h))
 
-type Handlers = HashMap Text (Value -> IO ())
+leaf :: Text -> HtmlM a
+leaf t = HtmlM $ \a -> DList.singleton (Parent (Element t a) [])
+
+text :: Text -> HtmlM a
+text t = HtmlM $ \_ -> DList.singleton (Text t)
+
+addAttribute :: Attribute -> HtmlM a -> HtmlM a
+addAttribute (Attribute f) (HtmlM g) = HtmlM (g . f)
 
 class Handler f where
     fire :: f e -> e -> IO ()
 
 class Event e where
-    extractEvent :: Value -> Parser e
-
-data Attributes = Attributes
-    { attributes :: !(HashMap Text Text)
-    , handlers   :: !Handlers
-    }
-
-instance Monoid Attributes where
-    mempty = Attributes
-        { attributes = mempty
-        , handlers   = mempty
-        }
-    mappend a b = Attributes
-        { attributes = merge attributes
-        , handlers   = merge handlers
-        }
-      where
-        merge f = f a <> f b
+    extractEvent :: JSRef a -> IO e
 
 newtype Attribute = Attribute (Attributes -> Attributes)
 
@@ -95,7 +109,7 @@ class Attributable h where
     (!) :: h -> Attribute -> h
 
 instance Attributable (HtmlM a) where
-    h ! a = AddAttribute a h
+    (!) = flip addAttribute
 
 instance Attributable h => Attributable (r -> h) where
     f ! a = (! a) . f
@@ -103,21 +117,26 @@ instance Attributable h => Attributable (r -> h) where
 (!?) :: Attributable h => h -> (Bool, Attribute) -> h
 h !? (p, a) = if p then h ! a else h
 
-attribute :: Text -> Text -> Attribute
-attribute k v = Attribute $ \a -> a { attributes = update (attributes a) }
+attribute :: Text -> (Maybe AttributeValue -> AttributeValue) -> Attribute
+attribute k f = Attribute $ \a -> a { attributes = update (attributes a) }
   where
-    update m = case HashMap.lookup k m of
-        Nothing -> HashMap.insert k v m
-        Just u  -> HashMap.insert k (Text.concat [u, Text.singleton ' ', v]) m
+    update m = HashMap.insert k (f (HashMap.lookup k m))
+
+token :: Text -> Text -> Attribute
+token k v = attribute k (\_ -> Token v)
+
+tokenSet :: Text -> Text -> Attribute
+tokenSet k v = attribute k $ \v -> case u of
+    Just (TokenSet vs) -> TokenSet (v : vs)
+    _                  -> TokenSet [v]
 
 boolean :: Text -> Attribute
-boolean k = attribute k Text.empty
+boolean k = attribute k (\_ -> Boolean)
 
 onEvent :: (Handler f, Event e) => Text -> f e -> Attribute
 onEvent k handler = Attribute $ \a ->
     a { handlers = HashMap.insert k h (handlers a) }
   where
-    h v = case parse extractEvent v of
-        Error s   -> fail s
-        Success e -> fire handler e
-
+    h v = do
+        e <- extractEvent v
+        fire handler e
