@@ -17,7 +17,7 @@ def unreserved(s):
 
 ### Elements
 
-outfile = open('src/Alder/Html5.hs', 'w')
+outfile = open('src/Alder/Html/Elements.hs', 'w')
 
 html_tags = '''
 a abbr address area article aside audio b base bdi bdo big blockquote body br
@@ -38,7 +38,7 @@ track wbr
 header = '''\
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Alder.Html5 where
+module Alder.Html.Elements where
 
 import           Alder.Html.Internal
 
@@ -70,7 +70,7 @@ outfile.close()
 
 ### Attributes
 
-outfile = open('src/Alder/Html5/Attributes.hs', 'w')
+outfile = open('src/Alder/Html/Attributes.hs', 'w')
 
 attributes = '''
 accept accept-charset accesskey action alt async autocomplete autofocus
@@ -112,7 +112,7 @@ events = {
 header = '''\
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Alder.Html5.Attributes where
+module Alder.Html.Attributes where
 
 import           Data.Text           (Text)
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Alder.Html.Internal
     ( -- * Elements
       Node(..)
@@ -31,8 +32,9 @@ import           Data.DList          as DList
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
 import           Data.Text           as Text
-import           GHCJS.Prim
 import           Unsafe.Coerce
+
+import           Alder.JavaScript
 
 infixl 1 !, !?
 
@@ -44,7 +46,7 @@ data AttributeValue
 
 data Attributes = Attributes
     { attributeValues :: !(HashMap Text AttributeValue)
-    , handlers        :: !(HashMap Text (JSRef a -> IO ()))
+    , handlers        :: !(HashMap Text (JSObj -> IO ()))
     }
 
 data Element = Element !Text Attributes
@@ -66,7 +68,7 @@ instance Applicative HtmlM where
     (<*>)  = appendHtml
 
 instance Monad HtmlM where
-    return _ = Empty
+    return _ = mempty
     (>>)     = appendHtml
     m >>= k  = m `appendHtml` k (error "Alder.HtmlM: monadic bind")
 
@@ -97,7 +99,7 @@ class Handler f where
     fire :: f e -> e -> IO ()
 
 class Event e where
-    extractEvent :: JSRef a -> IO e
+    extractEvent :: JSObj -> IO e
 
 newtype Attribute = Attribute (Attributes -> Attributes)
 
@@ -118,15 +120,16 @@ instance Attributable h => Attributable (r -> h) where
 h !? (p, a) = if p then h ! a else h
 
 attribute :: Text -> (Maybe AttributeValue -> AttributeValue) -> Attribute
-attribute k f = Attribute $ \a -> a { attributes = update (attributes a) }
+attribute k f = Attribute $ \a ->
+    a { attributeValues = update (attributeValues a) }
   where
-    update m = HashMap.insert k (f (HashMap.lookup k m))
+    update m = HashMap.insert k (f (HashMap.lookup k m)) m
 
 token :: Text -> Text -> Attribute
 token k v = attribute k (\_ -> Token v)
 
 tokenSet :: Text -> Text -> Attribute
-tokenSet k v = attribute k $ \v -> case u of
+tokenSet k v = attribute k $ \u -> case u of
     Just (TokenSet vs) -> TokenSet (v : vs)
     _                  -> TokenSet [v]
 

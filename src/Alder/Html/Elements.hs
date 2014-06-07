@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Alder.Html5 where
+module Alder.Html.Elements where
 
 import           Alder.Html.Internal
 
@@ -8,440 +8,440 @@ import           Alder.Html.Internal
 
 -- | The HTML @a@ tag.
 a :: Html -> Html
-a = Parent "a"
+a = parent "a"
 
 -- | The HTML @abbr@ tag.
 abbr :: Html -> Html
-abbr = Parent "abbr"
+abbr = parent "abbr"
 
 -- | The HTML @address@ tag.
 address :: Html -> Html
-address = Parent "address"
+address = parent "address"
 
 -- | The HTML @area@ tag.
 area :: Html
-area = Leaf "area"
+area = leaf "area"
 
 -- | The HTML @article@ tag.
 article :: Html -> Html
-article = Parent "article"
+article = parent "article"
 
 -- | The HTML @aside@ tag.
 aside :: Html -> Html
-aside = Parent "aside"
+aside = parent "aside"
 
 -- | The HTML @audio@ tag.
 audio :: Html -> Html
-audio = Parent "audio"
+audio = parent "audio"
 
 -- | The HTML @b@ tag.
 b :: Html -> Html
-b = Parent "b"
+b = parent "b"
 
 -- | The HTML @base@ tag.
 base :: Html
-base = Leaf "base"
+base = leaf "base"
 
 -- | The HTML @bdi@ tag.
 bdi :: Html -> Html
-bdi = Parent "bdi"
+bdi = parent "bdi"
 
 -- | The HTML @bdo@ tag.
 bdo :: Html -> Html
-bdo = Parent "bdo"
+bdo = parent "bdo"
 
 -- | The HTML @big@ tag.
 big :: Html -> Html
-big = Parent "big"
+big = parent "big"
 
 -- | The HTML @blockquote@ tag.
 blockquote :: Html -> Html
-blockquote = Parent "blockquote"
+blockquote = parent "blockquote"
 
 -- | The HTML @body@ tag.
 body :: Html -> Html
-body = Parent "body"
+body = parent "body"
 
 -- | The HTML @br@ tag.
 br :: Html
-br = Leaf "br"
+br = leaf "br"
 
 -- | The HTML @button@ tag.
 button :: Html -> Html
-button = Parent "button"
+button = parent "button"
 
 -- | The HTML @canvas@ tag.
 canvas :: Html -> Html
-canvas = Parent "canvas"
+canvas = parent "canvas"
 
 -- | The HTML @caption@ tag.
 caption :: Html -> Html
-caption = Parent "caption"
+caption = parent "caption"
 
 -- | The HTML @cite@ tag.
 cite :: Html -> Html
-cite = Parent "cite"
+cite = parent "cite"
 
 -- | The HTML @code@ tag.
 code :: Html -> Html
-code = Parent "code"
+code = parent "code"
 
 -- | The HTML @col@ tag.
 col :: Html
-col = Leaf "col"
+col = leaf "col"
 
 -- | The HTML @colgroup@ tag.
 colgroup :: Html -> Html
-colgroup = Parent "colgroup"
+colgroup = parent "colgroup"
 
 -- | The HTML @data@ tag.
 data_ :: Html -> Html
-data_ = Parent "data"
+data_ = parent "data"
 
 -- | The HTML @datalist@ tag.
 datalist :: Html -> Html
-datalist = Parent "datalist"
+datalist = parent "datalist"
 
 -- | The HTML @dd@ tag.
 dd :: Html -> Html
-dd = Parent "dd"
+dd = parent "dd"
 
 -- | The HTML @del@ tag.
 del :: Html -> Html
-del = Parent "del"
+del = parent "del"
 
 -- | The HTML @details@ tag.
 details :: Html -> Html
-details = Parent "details"
+details = parent "details"
 
 -- | The HTML @dfn@ tag.
 dfn :: Html -> Html
-dfn = Parent "dfn"
+dfn = parent "dfn"
 
 -- | The HTML @div@ tag.
 div :: Html -> Html
-div = Parent "div"
+div = parent "div"
 
 -- | The HTML @dl@ tag.
 dl :: Html -> Html
-dl = Parent "dl"
+dl = parent "dl"
 
 -- | The HTML @dt@ tag.
 dt :: Html -> Html
-dt = Parent "dt"
+dt = parent "dt"
 
 -- | The HTML @em@ tag.
 em :: Html -> Html
-em = Parent "em"
+em = parent "em"
 
 -- | The HTML @embed@ tag.
 embed :: Html
-embed = Leaf "embed"
+embed = leaf "embed"
 
 -- | The HTML @fieldset@ tag.
 fieldset :: Html -> Html
-fieldset = Parent "fieldset"
+fieldset = parent "fieldset"
 
 -- | The HTML @figcaption@ tag.
 figcaption :: Html -> Html
-figcaption = Parent "figcaption"
+figcaption = parent "figcaption"
 
 -- | The HTML @figure@ tag.
 figure :: Html -> Html
-figure = Parent "figure"
+figure = parent "figure"
 
 -- | The HTML @footer@ tag.
 footer :: Html -> Html
-footer = Parent "footer"
+footer = parent "footer"
 
 -- | The HTML @form@ tag.
 form :: Html -> Html
-form = Parent "form"
+form = parent "form"
 
 -- | The HTML @h1@ tag.
 h1 :: Html -> Html
-h1 = Parent "h1"
+h1 = parent "h1"
 
 -- | The HTML @h2@ tag.
 h2 :: Html -> Html
-h2 = Parent "h2"
+h2 = parent "h2"
 
 -- | The HTML @h3@ tag.
 h3 :: Html -> Html
-h3 = Parent "h3"
+h3 = parent "h3"
 
 -- | The HTML @h4@ tag.
 h4 :: Html -> Html
-h4 = Parent "h4"
+h4 = parent "h4"
 
 -- | The HTML @h5@ tag.
 h5 :: Html -> Html
-h5 = Parent "h5"
+h5 = parent "h5"
 
 -- | The HTML @h6@ tag.
 h6 :: Html -> Html
-h6 = Parent "h6"
+h6 = parent "h6"
 
 -- | The HTML @head@ tag.
 head :: Html -> Html
-head = Parent "head"
+head = parent "head"
 
 -- | The HTML @header@ tag.
 header :: Html -> Html
-header = Parent "header"
+header = parent "header"
 
 -- | The HTML @hr@ tag.
 hr :: Html
-hr = Leaf "hr"
+hr = leaf "hr"
 
 -- | The HTML @html@ tag.
 html :: Html -> Html
-html = Parent "html"
+html = parent "html"
 
 -- | The HTML @i@ tag.
 i :: Html -> Html
-i = Parent "i"
+i = parent "i"
 
 -- | The HTML @iframe@ tag.
 iframe :: Html -> Html
-iframe = Parent "iframe"
+iframe = parent "iframe"
 
 -- | The HTML @img@ tag.
 img :: Html
-img = Leaf "img"
+img = leaf "img"
 
 -- | The HTML @input@ tag.
 input :: Html
-input = Leaf "input"
+input = leaf "input"
 
 -- | The HTML @ins@ tag.
 ins :: Html -> Html
-ins = Parent "ins"
+ins = parent "ins"
 
 -- | The HTML @kbd@ tag.
 kbd :: Html -> Html
-kbd = Parent "kbd"
+kbd = parent "kbd"
 
 -- | The HTML @keygen@ tag.
 keygen :: Html
-keygen = Leaf "keygen"
+keygen = leaf "keygen"
 
 -- | The HTML @label@ tag.
 label :: Html -> Html
-label = Parent "label"
+label = parent "label"
 
 -- | The HTML @legend@ tag.
 legend :: Html -> Html
-legend = Parent "legend"
+legend = parent "legend"
 
 -- | The HTML @li@ tag.
 li :: Html -> Html
-li = Parent "li"
+li = parent "li"
 
 -- | The HTML @link@ tag.
 link :: Html
-link = Leaf "link"
+link = leaf "link"
 
 -- | The HTML @main@ tag.
 main :: Html -> Html
-main = Parent "main"
+main = parent "main"
 
 -- | The HTML @map@ tag.
 map :: Html -> Html
-map = Parent "map"
+map = parent "map"
 
 -- | The HTML @mark@ tag.
 mark :: Html -> Html
-mark = Parent "mark"
+mark = parent "mark"
 
 -- | The HTML @menu@ tag.
 menu :: Html -> Html
-menu = Parent "menu"
+menu = parent "menu"
 
 -- | The HTML @menuitem@ tag.
 menuitem :: Html -> Html
-menuitem = Parent "menuitem"
+menuitem = parent "menuitem"
 
 -- | The HTML @meta@ tag.
 meta :: Html
-meta = Leaf "meta"
+meta = leaf "meta"
 
 -- | The HTML @meter@ tag.
 meter :: Html -> Html
-meter = Parent "meter"
+meter = parent "meter"
 
 -- | The HTML @nav@ tag.
 nav :: Html -> Html
-nav = Parent "nav"
+nav = parent "nav"
 
 -- | The HTML @noscript@ tag.
 noscript :: Html -> Html
-noscript = Parent "noscript"
+noscript = parent "noscript"
 
 -- | The HTML @object@ tag.
 object :: Html -> Html
-object = Parent "object"
+object = parent "object"
 
 -- | The HTML @ol@ tag.
 ol :: Html -> Html
-ol = Parent "ol"
+ol = parent "ol"
 
 -- | The HTML @optgroup@ tag.
 optgroup :: Html -> Html
-optgroup = Parent "optgroup"
+optgroup = parent "optgroup"
 
 -- | The HTML @option@ tag.
 option :: Html -> Html
-option = Parent "option"
+option = parent "option"
 
 -- | The HTML @output@ tag.
 output :: Html -> Html
-output = Parent "output"
+output = parent "output"
 
 -- | The HTML @p@ tag.
 p :: Html -> Html
-p = Parent "p"
+p = parent "p"
 
 -- | The HTML @param@ tag.
 param :: Html
-param = Leaf "param"
+param = leaf "param"
 
 -- | The HTML @pre@ tag.
 pre :: Html -> Html
-pre = Parent "pre"
+pre = parent "pre"
 
 -- | The HTML @progress@ tag.
 progress :: Html -> Html
-progress = Parent "progress"
+progress = parent "progress"
 
 -- | The HTML @q@ tag.
 q :: Html -> Html
-q = Parent "q"
+q = parent "q"
 
 -- | The HTML @rp@ tag.
 rp :: Html -> Html
-rp = Parent "rp"
+rp = parent "rp"
 
 -- | The HTML @rt@ tag.
 rt :: Html -> Html
-rt = Parent "rt"
+rt = parent "rt"
 
 -- | The HTML @ruby@ tag.
 ruby :: Html -> Html
-ruby = Parent "ruby"
+ruby = parent "ruby"
 
 -- | The HTML @s@ tag.
 s :: Html -> Html
-s = Parent "s"
+s = parent "s"
 
 -- | The HTML @samp@ tag.
 samp :: Html -> Html
-samp = Parent "samp"
+samp = parent "samp"
 
 -- | The HTML @script@ tag.
 script :: Html -> Html
-script = Parent "script"
+script = parent "script"
 
 -- | The HTML @section@ tag.
 section :: Html -> Html
-section = Parent "section"
+section = parent "section"
 
 -- | The HTML @select@ tag.
 select :: Html -> Html
-select = Parent "select"
+select = parent "select"
 
 -- | The HTML @small@ tag.
 small :: Html -> Html
-small = Parent "small"
+small = parent "small"
 
 -- | The HTML @source@ tag.
 source :: Html
-source = Leaf "source"
+source = leaf "source"
 
 -- | The HTML @span@ tag.
 span :: Html -> Html
-span = Parent "span"
+span = parent "span"
 
 -- | The HTML @strong@ tag.
 strong :: Html -> Html
-strong = Parent "strong"
+strong = parent "strong"
 
 -- | The HTML @style@ tag.
 style :: Html -> Html
-style = Parent "style"
+style = parent "style"
 
 -- | The HTML @sub@ tag.
 sub :: Html -> Html
-sub = Parent "sub"
+sub = parent "sub"
 
 -- | The HTML @summary@ tag.
 summary :: Html -> Html
-summary = Parent "summary"
+summary = parent "summary"
 
 -- | The HTML @sup@ tag.
 sup :: Html -> Html
-sup = Parent "sup"
+sup = parent "sup"
 
 -- | The HTML @table@ tag.
 table :: Html -> Html
-table = Parent "table"
+table = parent "table"
 
 -- | The HTML @tbody@ tag.
 tbody :: Html -> Html
-tbody = Parent "tbody"
+tbody = parent "tbody"
 
 -- | The HTML @td@ tag.
 td :: Html -> Html
-td = Parent "td"
+td = parent "td"
 
 -- | The HTML @textarea@ tag.
 textarea :: Html -> Html
-textarea = Parent "textarea"
+textarea = parent "textarea"
 
 -- | The HTML @tfoot@ tag.
 tfoot :: Html -> Html
-tfoot = Parent "tfoot"
+tfoot = parent "tfoot"
 
 -- | The HTML @th@ tag.
 th :: Html -> Html
-th = Parent "th"
+th = parent "th"
 
 -- | The HTML @thead@ tag.
 thead :: Html -> Html
-thead = Parent "thead"
+thead = parent "thead"
 
 -- | The HTML @time@ tag.
 time :: Html -> Html
-time = Parent "time"
+time = parent "time"
 
 -- | The HTML @title@ tag.
 title :: Html -> Html
-title = Parent "title"
+title = parent "title"
 
 -- | The HTML @tr@ tag.
 tr :: Html -> Html
-tr = Parent "tr"
+tr = parent "tr"
 
 -- | The HTML @track@ tag.
 track :: Html
-track = Leaf "track"
+track = leaf "track"
 
 -- | The HTML @u@ tag.
 u :: Html -> Html
-u = Parent "u"
+u = parent "u"
 
 -- | The HTML @ul@ tag.
 ul :: Html -> Html
-ul = Parent "ul"
+ul = parent "ul"
 
 -- | The HTML @var@ tag.
 var :: Html -> Html
-var = Parent "var"
+var = parent "var"
 
 -- | The HTML @video@ tag.
 video :: Html -> Html
-video = Parent "video"
+video = parent "video"
 
 -- | The HTML @wbr@ tag.
 wbr :: Html
-wbr = Leaf "wbr"
+wbr = leaf "wbr"

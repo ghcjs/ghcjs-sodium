@@ -1,19 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Events.
 module Alder.Html.Events
-    ( -- * Keyboard events
+    ( -- * Types
       Modifier(..)
     , Location(..)
-    , KeyboardEvent(..)
-      -- * Focus events
-    , FocusEvent(..)
-      -- * Input events
-    , InputEvent(..)
-      -- * Submit events
-    , SubmitEvent(..)
-      -- * Mouse events
     , Button(..)
     , Position(..)
+      -- * Events
+    , KeyboardEvent(..)
+    , FocusEvent(..)
+    , InputEvent(..)
+    , SubmitEvent(..)
     , MouseEvent(..)
     ) where
 
@@ -32,7 +29,19 @@ import           Alder.JavaScript
 data Modifier = Alt | Ctrl | Meta | Shift
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
-modifiers :: Object -> IO (Set Modifier)
+data Location
+    = StandardLocation | LeftLocation | RightLocation | NumpadLocation
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
+-- | A mouse button.
+data Button = LeftButton | MiddleButton | RightButton
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
+-- | Coordinate positions.
+data Position = Position !Int !Int
+    deriving (Eq, Ord, Read, Show)
+
+modifiers :: JSObj -> IO (Set Modifier)
 modifiers ev = Set.fromList . catMaybes <$> sequence
     [ switch Alt   "altKey"
     , switch Ctrl  "ctrlKey"
@@ -41,10 +50,6 @@ modifiers ev = Set.fromList . catMaybes <$> sequence
     ]
   where
     switch a k = (\b -> if b then Just a else Nothing) <$> ev .: k
-
-data Location
-    = StandardLocation | LeftLocation | RightLocation | NumpadLocation
-    deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
 data KeyboardEvent = KeyboardEvent
     { key               :: !Char
@@ -82,14 +87,6 @@ data SubmitEvent = SubmitEvent deriving (Eq, Read, Show)
 instance Event SubmitEvent where
     extractEvent _ = return SubmitEvent
 
--- | A mouse button.
-data Button = LeftButton | MiddleButton | RightButton
-    deriving (Eq, Ord, Read, Show, Enum, Bounded)
-
--- | Coordinate positions.
-data Position = Position !Int !Int
-    deriving (Eq, Ord, Read, Show)
-
 -- | A mouse event.
 data MouseEvent = MouseEvent
     { button         :: !Button
@@ -103,8 +100,8 @@ instance Event MouseEvent where
     extractEvent ev = MouseEvent
         <$> (toEnum <$> ev .: "button")
         <*> modifiers ev
-        <*> position ev "clientX" "clientY"
-        <*> position ev "pageX" "pageY"
-        <*> position ev "screenX" "screenY"
+        <*> position "clientX" "clientY"
+        <*> position "pageX" "pageY"
+        <*> position "screenX" "screenY"
       where
-        position ev a b = Position <$> ev .: a <*> ev .: b
+        position a b = Position <$> ev .: a <*> ev .: b

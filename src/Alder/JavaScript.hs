@@ -2,7 +2,8 @@
 {-# LANGUAGE JavaScriptFFI            #-}
 -- | JavaScript marshalling. This module is pretty unsafe. Be careful.
 module Alder.JavaScript
-    ( JSValue(..)
+    ( JSObj
+    , JSValue(..)
     , JSArgs(..)
     , window
     , (.:)
@@ -19,6 +20,8 @@ import           Data.Text          as Text
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
+
+type JSObj = JSRef ()
 
 class JSValue a where
     toJSValue   :: a -> IO (JSRef b)
@@ -107,7 +110,7 @@ apply obj fun b = liftIO $ do
     fromJSValue res
 
 foreign import javascript unsafe "$r = window;"
-    getGlobal :: JSRef a
+    getWindow :: JSRef a
 
 foreign import javascript unsafe "$r = $1[$2]();"
     apply0 :: JSRef a -> JSString -> IO (JSRef b)

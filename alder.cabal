@@ -33,6 +33,7 @@ library
     base,
     containers,
     contravariant,
+    dlist,
     ghcjs-base,
     mtl,
     sodium,
@@ -41,9 +42,9 @@ library
 
   exposed-modules:
     Alder.Html
+    Alder.Html.Attributes
+    Alder.Html.Elements
     Alder.Html.Events
-    Alder.Html5
-    Alder.Html5.Attributes
     Alder.Mount
     Alder.Sodium
 

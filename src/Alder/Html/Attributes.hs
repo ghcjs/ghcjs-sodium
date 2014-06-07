@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Alder.Html5.Attributes where
+module Alder.Html.Attributes where
 
 import           Data.Text           (Text)
 
