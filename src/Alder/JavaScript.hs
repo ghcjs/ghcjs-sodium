@@ -4,8 +4,8 @@
 module Alder.JavaScript
     ( JSValue(..)
     , JSArgs(..)
-    , global
-    , readProp
+    , window
+    , (.:)
     , writeProp
     , call
     , apply
@@ -13,7 +13,6 @@ module Alder.JavaScript
 
 import           Control.Applicative
 import           Control.Monad.Trans
-import           Data.Aeson
 import           Data.Maybe
 import           Data.Text          as Text
 
@@ -55,10 +54,6 @@ instance JSValue Text where
         convert 4 = fromJSString (castRef ref)
         convert _ = Text.empty
 
-instance JSValue Value where
-    toJSValue   = fmap castRef . toJSRef
-    fromJSValue = fmap (fromMaybe Null) <$> fromJSRef . castRef
-
 class JSArgs a where
     applyFunction :: JSRef b -> JSString -> a -> IO (JSRef c)
 
@@ -82,15 +77,13 @@ instance (JSValue a, JSValue b, JSValue c) => JSArgs (a, b, c) where
         res <- apply3 obj fun arg1 arg2 arg3
         fromJSValue res
 
--- | Get a global property value.
-global :: (MonadIO m, JSValue a) => Text -> m a
-global prop = liftIO $ do
-    a <- getGlobal (toJSString prop)
-    fromJSValue a
+-- | The global @window@ object.
+window :: JSRef a
+window = getWindow
 
 -- | Get a property value.
-readProp :: (MonadIO m, JSValue b) => JSRef a -> Text -> m b
-readProp obj prop = liftIO $ do
+(.:) :: (MonadIO m, JSValue b) => JSRef a -> Text -> m b
+obj .: prop = liftIO $ do
     res <- unsafeGetProp prop obj
     fromJSValue res
 
@@ -113,8 +106,8 @@ apply obj fun b = liftIO $ do
     res <- applyFunction obj (toJSString fun) b
     fromJSValue res
 
-foreign import javascript unsafe "$r = window[$1];"
-    getGlobal :: JSString -> IO (JSRef a)
+foreign import javascript unsafe "$r = window;"
+    getGlobal :: JSRef a
 
 foreign import javascript unsafe "$r = $1[$2]();"
     apply0 :: JSRef a -> JSString -> IO (JSRef b)

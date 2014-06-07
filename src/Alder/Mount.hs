@@ -67,7 +67,7 @@ mount = do
 
 listen :: (DOMElement -> Text -> Value -> IO ()) -> IO ()
 listen callback = do
-    events <- global "Events"
+    events <- window .: "Events"
     jsCallback <- syncCallback1 AlwaysRetain False $ \params -> do
         target    <- readProp params "target"
         eventName <- readProp params "eventName"
@@ -104,7 +104,7 @@ dispatch target eventName obj = do
 update :: Html -> Mount ()
 update html = do
     let new = fromHtml html
-    doc <- global "document"
+    doc <- window .: "document"
     body <- readProp doc "body"
     modify $ \s -> s { eventMap = HashMap.empty }
     removeChildren body
@@ -112,7 +112,7 @@ update html = do
 
 create :: Element -> Mount DOMElement
 create (Element t attrs cs) = do
-    doc <- global "document"
+    doc <- window .: "document"
     e <- call doc "createElement" t
     register e (handlers attrs)
     forM_ (HashMap.toList $ attributes attrs) $ \(k, v) ->
@@ -120,7 +120,7 @@ create (Element t attrs cs) = do
     createChildren e cs
     return e
 create (Text t) = do
-    doc <- global "document"
+    doc <- window .: "document"
     call doc "createTextNode" t
 
 createChildren :: DOMElement -> [Element] -> Mount ()
