@@ -20,19 +20,19 @@ module Alder.Html.Events
 import           Prelude             hiding (repeat)
 
 import           Control.Applicative
-import           Data.Aeson.Types
 import           Data.Char
 import           Data.Maybe
 import           Data.Set            as Set
 import           Data.Text           as Text
 
 import           Alder.Html.Internal
+import           Alder.JavaScript
 
 -- | A mouse modifier key.
 data Modifier = Alt | Ctrl | Meta | Shift
     deriving (Eq, Ord, Read, Show, Enum, Bounded)
 
-modifiers :: Object -> Parser (Set Modifier)
+modifiers :: Object -> IO (Set Modifier)
 modifiers ev = Set.fromList . catMaybes <$> sequence
     [ switch Alt   "altKey"
     , switch Ctrl  "ctrlKey"
@@ -55,13 +55,12 @@ data KeyboardEvent = KeyboardEvent
     } deriving (Eq, Read, Show)
 
 instance Event KeyboardEvent where
-    extractEvent = withObject "keyboard event" $ \ev ->
-        KeyboardEvent
-            <$> (chr <$> ev .: "key")
-            <*> modifiers ev
-            <*> (toEnum <$> ev .: "location")
-            <*> ev .: "locale"
-            <*> ev .: "repeat"
+    extractEvent ev = KeyboardEvent
+        <$> (chr <$> ev .: "key")
+        <*> modifiers ev
+        <*> (toEnum <$> ev .: "location")
+        <*> ev .: "locale"
+        <*> ev .: "repeat"
 
 data InputEvent = InputEvent
     { checked :: !Bool
@@ -69,20 +68,19 @@ data InputEvent = InputEvent
     } deriving (Eq, Read, Show)
 
 instance Event InputEvent where
-    extractEvent = withObject "form event" $ \ev ->
-        InputEvent
-            <$> ev .: "checked"
-            <*> ev .: "value"
+    extractEvent ev = InputEvent
+        <$> ev .: "checked"
+        <*> ev .: "value"
 
 data FocusEvent = FocusEvent deriving (Eq, Read, Show)
 
 instance Event FocusEvent where
-    extractEvent = withObject "submit event" $ \_ -> pure FocusEvent
+    extractEvent _ = return FocusEvent
 
 data SubmitEvent = SubmitEvent deriving (Eq, Read, Show)
 
 instance Event SubmitEvent where
-    extractEvent = withObject "submit event" $ \_ -> pure SubmitEvent
+    extractEvent _ = return SubmitEvent
 
 -- | A mouse button.
 data Button = LeftButton | MiddleButton | RightButton
@@ -102,12 +100,11 @@ data MouseEvent = MouseEvent
     } deriving (Eq, Read, Show)
 
 instance Event MouseEvent where
-    extractEvent = withObject "mouse event" $ \ev ->
-        MouseEvent
-            <$> (toEnum <$> ev .: "button")
-            <*> modifiers ev
-            <*> position ev "clientX" "clientY"
-            <*> position ev "pageX" "pageY"
-            <*> position ev "screenX" "screenY"
+    extractEvent ev = MouseEvent
+        <$> (toEnum <$> ev .: "button")
+        <*> modifiers ev
+        <*> position ev "clientX" "clientY"
+        <*> position ev "pageX" "pageY"
+        <*> position ev "screenX" "screenY"
       where
         position ev a b = Position <$> ev .: a <*> ev .: b
