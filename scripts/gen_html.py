@@ -65,11 +65,11 @@ attributes['className'] = 'token_set'
 tokens = '''
 accept accessKey action allowFullScreen allowTransparency alt cellPadding
 cellSpacing charset checked colSpan cols content contentEditable contextMenu
-controls data_ dateTime dir draggable encType form formNoValidate frameBorder
-height href htmlFor icon id label lang list max maxLength method min name
-pattern placeholder poster radioGroup readOnly rel role rowSpan rows sandbox
-scope scrollLeft scrollTop selected size span spellCheck src srcDoc step style
-tabIndex target title type_ value width wmode
+controls data_ dateTime dir draggable encType for form formNoValidate
+frameBorder height href htmlFor icon id label lang list max maxLength method
+min name pattern placeholder poster radioGroup readOnly rel role rowSpan rows
+sandbox scope scrollLeft scrollTop selected size span spellCheck src srcDoc
+step style tabIndex target title type_ value width wmode
 '''
 
 attributes.update({attr:'token' for attr in tokens.split()})

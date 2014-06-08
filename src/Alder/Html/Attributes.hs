@@ -126,6 +126,10 @@ draggable = token "draggable"
 encType :: Text -> Attribute
 encType = token "enctype"
 
+-- | The @for@ attribute.
+for :: Text -> Attribute
+for = token "for"
+
 -- | The @form@ attribute.
 form :: Text -> Attribute
 form = token "form"
