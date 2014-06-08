@@ -89,6 +89,7 @@ events = {
     'onFocus'      : ('focus'    , 'FocusEvent'),
     'onBlur'       : ('blur'     , 'FocusEvent'),
     'onInput'      : ('input'    , 'InputEvent'),
+    'onChange'     : ('change'   , 'InputEvent'),
     'onSubmit'     : ('submit'   , 'SubmitEvent'),
     'onMouseDown'  : ('mousedown', 'MouseEvent'),
     'onMouseUp'    : ('mouseup'  , 'MouseEvent'),

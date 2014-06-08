@@ -214,6 +214,10 @@ noValidate = boolean "novalidate"
 onBlur :: Handler f => f E.FocusEvent -> Attribute
 onBlur = onEvent "blur"
 
+-- | Set the handler for the @change@ event.
+onChange :: Handler f => f E.InputEvent -> Attribute
+onChange = onEvent "change"
+
 -- | Set the handler for the @click@ event.
 onClick :: Handler f => f E.MouseEvent -> Attribute
 onClick = onEvent "click"
