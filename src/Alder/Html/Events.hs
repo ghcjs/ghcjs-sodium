@@ -76,9 +76,11 @@ data InputEvent = InputEvent
     } deriving (Eq, Read, Show)
 
 instance Event InputEvent where
-    extractEvent ev = InputEvent
-        <$> ev .: "checked"
-        <*> ev .: "value"
+    extractEvent ev = do
+        target <- ev .: "target"
+        InputEvent
+            <$> target .: "checked"
+            <*> target .: "value"
 
 data FocusEvent = FocusEvent deriving (Eq, Read, Show)
 
