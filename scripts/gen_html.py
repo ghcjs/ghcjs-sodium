@@ -151,7 +151,9 @@ for attr in sorted(list(attributes)):
         outfile.write(boolean_declaration.format(attr_, attr))
     else:
         eventType = attributes[attr]
-        eventName = attr[2:]
+        eventName = attr[2:].lower()
+        if eventName == 'doubleclick':
+            eventName = 'dblclick'
         outfile.write(event_declaration.format(eventName, attr, eventType))
 
 outfile.close()

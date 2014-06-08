@@ -206,61 +206,61 @@ name = token "name"
 noValidate :: Attribute
 noValidate = boolean "novalidate"
 
--- | Set the handler for the @Blur@ event.
+-- | Set the handler for the @blur@ event.
 onBlur :: Handler f => f E.FocusEvent -> Attribute
-onBlur = onEvent "Blur"
+onBlur = onEvent "blur"
 
--- | Set the handler for the @Click@ event.
+-- | Set the handler for the @click@ event.
 onClick :: Handler f => f E.MouseEvent -> Attribute
-onClick = onEvent "Click"
+onClick = onEvent "click"
 
--- | Set the handler for the @DoubleClick@ event.
+-- | Set the handler for the @dblclick@ event.
 onDoubleClick :: Handler f => f E.MouseEvent -> Attribute
-onDoubleClick = onEvent "DoubleClick"
+onDoubleClick = onEvent "dblclick"
 
--- | Set the handler for the @Focus@ event.
+-- | Set the handler for the @focus@ event.
 onFocus :: Handler f => f E.FocusEvent -> Attribute
-onFocus = onEvent "Focus"
+onFocus = onEvent "focus"
 
--- | Set the handler for the @Input@ event.
+-- | Set the handler for the @input@ event.
 onInput :: Handler f => f E.InputEvent -> Attribute
-onInput = onEvent "Input"
+onInput = onEvent "input"
 
--- | Set the handler for the @KeyDown@ event.
+-- | Set the handler for the @keydown@ event.
 onKeyDown :: Handler f => f E.KeyboardEvent -> Attribute
-onKeyDown = onEvent "KeyDown"
+onKeyDown = onEvent "keydown"
 
--- | Set the handler for the @KeyPress@ event.
+-- | Set the handler for the @keypress@ event.
 onKeyPress :: Handler f => f E.KeyboardEvent -> Attribute
-onKeyPress = onEvent "KeyPress"
+onKeyPress = onEvent "keypress"
 
--- | Set the handler for the @KeyUp@ event.
+-- | Set the handler for the @keyup@ event.
 onKeyUp :: Handler f => f E.KeyboardEvent -> Attribute
-onKeyUp = onEvent "KeyUp"
+onKeyUp = onEvent "keyup"
 
--- | Set the handler for the @MouseDown@ event.
+-- | Set the handler for the @mousedown@ event.
 onMouseDown :: Handler f => f E.MouseEvent -> Attribute
-onMouseDown = onEvent "MouseDown"
+onMouseDown = onEvent "mousedown"
 
--- | Set the handler for the @MouseEnter@ event.
+-- | Set the handler for the @mouseenter@ event.
 onMouseEnter :: Handler f => f E.MouseEvent -> Attribute
-onMouseEnter = onEvent "MouseEnter"
+onMouseEnter = onEvent "mouseenter"
 
--- | Set the handler for the @MouseLeave@ event.
+-- | Set the handler for the @mouseleave@ event.
 onMouseLeave :: Handler f => f E.MouseEvent -> Attribute
-onMouseLeave = onEvent "MouseLeave"
+onMouseLeave = onEvent "mouseleave"
 
--- | Set the handler for the @MouseMove@ event.
+-- | Set the handler for the @mousemove@ event.
 onMouseMove :: Handler f => f E.MouseEvent -> Attribute
-onMouseMove = onEvent "MouseMove"
+onMouseMove = onEvent "mousemove"
 
--- | Set the handler for the @MouseUp@ event.
+-- | Set the handler for the @mouseup@ event.
 onMouseUp :: Handler f => f E.MouseEvent -> Attribute
-onMouseUp = onEvent "MouseUp"
+onMouseUp = onEvent "mouseup"
 
--- | Set the handler for the @Submit@ event.
+-- | Set the handler for the @submit@ event.
 onSubmit :: Handler f => f E.SubmitEvent -> Attribute
-onSubmit = onEvent "Submit"
+onSubmit = onEvent "submit"
 
 -- | The @pattern@ attribute.
 pattern :: Text -> Attribute
