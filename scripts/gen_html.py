@@ -83,20 +83,20 @@ spellCheck
 attributes.update({attr:'boolean' for attr in booleans.split()})
 
 events = {
-    'onKeyDown'    : 'KeyboardEvent',
-    'onKeyPress'   : 'KeyboardEvent',
-    'onKeyUp'      : 'KeyboardEvent',
-    'onFocus'      : 'FocusEvent',
-    'onBlur'       : 'FocusEvent',
-    'onInput'      : 'InputEvent',
-    'onSubmit'     : 'SubmitEvent',
-    'onMouseDown'  : 'MouseEvent',
-    'onMouseUp'    : 'MouseEvent',
-    'onClick'      : 'MouseEvent',
-    'onDoubleClick': 'MouseEvent',
-    'onMouseMove'  : 'MouseEvent',
-    'onMouseEnter' : 'MouseEvent',
-    'onMouseLeave' : 'MouseEvent'
+    'onKeyDown'    : ('keydown'  , 'KeyboardEvent'),
+    'onKeyPress'   : ('keypress' , 'KeyboardEvent'),
+    'onKeyUp'      : ('keyup'    , 'KeyboardEvent'),
+    'onFocus'      : ('focus'    , 'FocusEvent'),
+    'onBlur'       : ('blur'     , 'FocusEvent'),
+    'onInput'      : ('input'    , 'InputEvent'),
+    'onSubmit'     : ('submit'   , 'SubmitEvent'),
+    'onMouseDown'  : ('mousedown', 'MouseEvent'),
+    'onMouseUp'    : ('mouseup'  , 'MouseEvent'),
+    'onClick'      : ('click'    , 'MouseEvent'),
+    'onDoubleClick': ('dblclick' , 'MouseEvent'),
+    'onMouseMove'  : ('mousemove', 'MouseEvent'),
+    'onMouseEnter' : ('mouseover', 'MouseEvent'),
+    'onMouseLeave' : ('mouseout' , 'MouseEvent')
 }
 
 attributes.update(events)
@@ -150,10 +150,7 @@ for attr in sorted(list(attributes)):
     elif attributes[attr] == 'boolean':
         outfile.write(boolean_declaration.format(attr_, attr))
     else:
-        eventType = attributes[attr]
-        eventName = attr[2:].lower()
-        if eventName == 'doubleclick':
-            eventName = 'dblclick'
+        eventName, eventType = attributes[attr]
         outfile.write(event_declaration.format(eventName, attr, eventType))
 
 outfile.close()

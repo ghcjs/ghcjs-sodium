@@ -1,5 +1,4 @@
 
-{-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Alder.Mount
     ( mount
@@ -8,28 +7,23 @@ module Alder.Mount
 import           Control.Monad
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
-import           Data.Aeson
+import           Control.Monad.Trans.Maybe
 import           Data.HashMap.Strict       as HashMap
 import           Data.IORef
-import           Data.Maybe
-import           Data.Monoid
 import           Data.Text                 as Text
 import           GHCJS.Foreign
-import           GHCJS.Types
 
 import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript
 
-data NativeNode
-
-type DOMNode = JSRef NativeNode
+type DOMNode = JSObj
 
 type Name = Int
 
 data MountState = MountState
     { nextName :: !Name
-    , eventMap :: !(HashMap Name Element)
+    , nameMap  :: !(HashMap Name Element)
     }
 
 type Mount = IOState MountState
@@ -37,87 +31,110 @@ type Mount = IOState MountState
 ignore :: m () -> m ()
 ignore = id
 
+readMaybe :: Read a => String -> Maybe a
+readMaybe s = case reads s of
+    [(a,"")] -> Just a
+    _        -> Nothing
+
 mount :: IO (Html -> IO ())
 mount = do
     ref <- newIORef MountState
         { nextName = 0
-        , eventMap = HashMap.empty
+        , nameMap  = HashMap.empty
         }
-    listen $ \target eventName obj ->
-        runIOState (dispatch target eventName obj) ref
+    listen $ \eventName ev -> runIOState (dispatch eventName ev) ref
     return $ \html -> runIOState (update html) ref
 
-listen :: (DOMElement -> Text -> Value -> IO ()) -> IO ()
+listen :: (Text -> JSObj -> IO ()) -> IO ()
 listen callback = do
-    events <- window .: "Events"
-    jsCallback <- syncCallback1 AlwaysRetain False $ \params -> do
-        target    <- readProp params "target"
-        eventName <- readProp params "eventName"
-        obj       <- readProp params "eventObject"
-        callback target eventName obj
-    ignore $ call events "listen" jsCallback
+    document <- window .: "document"
+    forM_ eventNames $ \(eventName, useCapture) -> do
+        jsCallback <- syncCallback1 AlwaysRetain False $ callback eventName
+        ignore $ apply document "addEventListener" (eventName, jsCallback, useCapture)
+  where
+    eventNames =
+        [ ("keydown"   , False)
+        , ("keypress"  , False)
+        , ("keyup"     , False)
+        , ("focus"     , True)
+        , ("blur"      , True)
+        , ("input"     , False)
+        , ("submit"    , False)
+        , ("mousedown" , False)
+        , ("mouseup"   , False)
+        , ("click"     , False)
+        , ("dblclick"  , False)
+        , ("mousemove" , False)
+        , ("mouseover" , False)
+        , ("mouseout"  , False)
+        ]
 
 nameAttr :: Text
 nameAttr = "data-alder-id"
 
-register :: DOMElement -> Handlers -> Mount ()
-register e h = do
+register :: DOMNode -> Element -> Mount ()
+register n e = do
     name <- gets nextName
-    ignore $ apply e "setAttribute" (nameAttr, Text.pack $ show name)
+    ignore $ apply n "setAttribute" (nameAttr, Text.pack $ show name)
     modify $ \s -> s
         { nextName = name + 1
-        , eventMap = HashMap.insert name h (eventMap s)
+        , nameMap  = HashMap.insert name e (nameMap s)
         }
 
-dispatch :: DOMElement -> Text -> Value -> Mount ()
-dispatch target eventName obj = do
-    field <- call target "getAttribute" nameAttr
-    m <- gets eventMap
-    fromMaybe (return ()) $ do
-        name <- readMaybe (Text.unpack field)
-        hs   <- HashMap.lookup name m
-        h    <- HashMap.lookup eventName hs
-        return $ liftIO (h obj)
-  where
-    readMaybe s = case reads s of
-        [(a,"")] -> Just a
-        _        -> Nothing
+retrieve :: DOMNode -> Mount (Maybe Element)
+retrieve n = runMaybeT $ do
+    attr <- MaybeT $ call n "getAttribute" nameAttr
+    name <- MaybeT . return $ readMaybe (Text.unpack attr)
+    MaybeT $ gets (HashMap.lookup name . nameMap)
+
+dispatch :: Text -> JSObj -> Mount ()
+dispatch eventName ev = void . runMaybeT $ do
+    target  <- MaybeT $ ev .: "target"
+    Element _ attrs <- MaybeT $ retrieve target
+    case HashMap.lookup eventName (handlers attrs) of
+        Nothing -> return ()
+        Just h  -> liftIO $ h ev
 
 update :: Html -> Mount ()
 update html = do
-    let new = fromHtml html
-    doc <- window .: "document"
-    body <- readProp doc "body"
-    modify $ \s -> s { eventMap = HashMap.empty }
+    let new = runHtml html
+    document <- window .: "document"
+    body <- document .: "body"
     removeChildren body
+    modify $ \s -> s { nameMap = HashMap.empty }
     createChildren body new
 
-create :: Element -> Mount DOMElement
-create (Element t attrs cs) = do
-    doc <- window .: "document"
-    e <- call doc "createElement" t
-    register e (handlers attrs)
-    forM_ (HashMap.toList $ attributes attrs) $ \(k, v) ->
-        ignore $ apply e "setAttribute" (k, v)
-    createChildren e cs
-    return e
-create (Text t) = do
-    doc <- window .: "document"
-    call doc "createTextNode" t
+attributeValue :: AttributeValue -> Text
+attributeValue (Token t)     = t
+attributeValue (TokenSet ts) = Text.intercalate " " (Prelude.reverse ts)
+attributeValue Boolean       = ""
 
-createChildren :: DOMElement -> [Element] -> Mount ()
-createChildren parent cs = do
+create :: Node -> Mount DOMNode
+create (Parent e@(Element t attrs) cs) = do
+    document <- window .: "document"
+    n <- call document "createElement" t
+    register n e
+    forM_ (HashMap.toList $ attributeValues attrs) $ \(k, v) ->
+        ignore $ apply n "setAttribute" (k, attributeValue v)
+    createChildren n cs
+    return n
+create (Text t) = do
+    document <- window .: "document"
+    call document "createTextNode" t
+
+createChildren :: DOMNode -> [Node] -> Mount ()
+createChildren n cs = do
     children <- mapM create cs
     forM_ children $ \child ->
-        ignore $ call parent "appendChild" child
+        ignore $ call n "appendChild" child
 
-removeChildren :: DOMElement -> Mount ()
-removeChildren parent = go
+removeChildren :: DOMNode -> Mount ()
+removeChildren n = go
   where
     go = do
-        r <- readProp parent "lastChild"
+        r <- n .: "lastChild"
         case r of
             Nothing -> return ()
             Just c  -> do
-                ignore $ call parent "removeChild" (c :: DOMElement)
+                ignore $ call n "removeChild" (c :: DOMNode)
                 go
