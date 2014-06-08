@@ -77,7 +77,10 @@ instance Monad HtmlM where
     (>>)     = appendHtml
     m >>= k  = m `appendHtml` k (error "Alder.HtmlM: monadic bind")
 
-runHtml :: HtmlM a -> [Node]
+appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
+appendHtml a b = unsafeCoerce a <> unsafeCoerce b
+
+runHtml :: Html -> [Node]
 runHtml (HtmlM f) = DList.toList (f defaultAttributes)
   where
     defaultAttributes = Attributes
@@ -85,16 +88,13 @@ runHtml (HtmlM f) = DList.toList (f defaultAttributes)
         , handlers        = HashMap.empty
         }
 
-appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
-appendHtml a b = unsafeCoerce a <> unsafeCoerce b
-
-parent :: Text -> HtmlM a -> HtmlM a
+parent :: Text -> Html -> Html
 parent t h = HtmlM $ \a -> DList.singleton (Parent (Element t a) (runHtml h))
 
-leaf :: Text -> HtmlM a
+leaf :: Text -> Html
 leaf t = HtmlM $ \a -> DList.singleton (Parent (Element t a) [])
 
-text :: Text -> HtmlM a
+text :: Text -> Html
 text t = HtmlM $ \_ -> DList.singleton (Text t)
 
 addAttribute :: Attribute -> HtmlM a -> HtmlM a
