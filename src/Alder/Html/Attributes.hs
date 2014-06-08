@@ -65,10 +65,10 @@ charset = token "charset"
 checked :: Attribute
 checked = boolean "checked"
 
--- | The @classname@ attribute. This will append to the current value of the
+-- | The @class@ attribute. This will append to the current value of the
 -- attribute.
-className :: Text -> Attribute
-className = tokenSet "classname"
+class_ :: Text -> Attribute
+class_ = tokenSet "class"
 
 -- | The @colspan@ attribute.
 colSpan :: Text -> Attribute

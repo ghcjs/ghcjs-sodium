@@ -128,7 +128,7 @@ h !? (p, a) = if p then h ! a else h
 h !# v = h ! token "id" v
 
 (!.) :: Attributable h => h -> Text -> h
-h !. v = h ! tokenSet "className" v
+h !. v = h ! tokenSet "class" v
 
 (!?.) :: Attributable h => h -> (Bool, Text) -> h
 h !?. (p, v) = if p then h !. v else h

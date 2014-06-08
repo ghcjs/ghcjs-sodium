@@ -60,7 +60,7 @@ outfile = open('src/Alder/Html/Attributes.hs', 'w')
 # TODO: change some attributes to token_set, or add new types
 attributes = {}
 
-attributes['className'] = 'token_set'
+attributes['class_'] = 'token_set'
 
 tokens = '''
 accept accessKey action allowFullScreen allowTransparency alt cellPadding
