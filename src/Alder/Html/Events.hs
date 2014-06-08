@@ -61,11 +61,14 @@ data KeyboardEvent = KeyboardEvent
 
 instance Event KeyboardEvent where
     extractEvent ev = KeyboardEvent
-        <$> (chr <$> ev .: "key")
+        <$> (alt <$> ev .: "keyCode" <*> ev .: "charCode")
         <*> modifiers ev
         <*> (toEnum <$> ev .: "location")
         <*> ev .: "locale"
         <*> ev .: "repeat"
+      where
+        alt 0 b = chr b
+        alt a _ = chr a
 
 data InputEvent = InputEvent
     { checked :: !Bool
