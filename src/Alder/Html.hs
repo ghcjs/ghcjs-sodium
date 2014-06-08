@@ -7,6 +7,9 @@ module Alder.Html
     , Attributable
     , (!)
     , (!?)
+    , (!#)
+    , (!.)
+    , (!?.)
     ) where
 
 import           Alder.Html.Internal

@@ -1,29 +1,14 @@
 #!/usr/bin/env python
 
-keywords = '''
-case class data default deriving do else foreign if import in infix infixl
-infixr instance let module newtype of then type where
-'''.split()
-
-def camelCase(s):
-    words = s.split('-')
-    words = [words[0]] + [w.title() for w in words[1:]]
-    return ''.join(words)
-
-def unreserved(s):
-    if s in keywords:
-        return s + '_'
-    return s
-
 ### Elements
 
 outfile = open('src/Alder/Html/Elements.hs', 'w')
 
 html_tags = '''
 a abbr address area article aside audio b base bdi bdo big blockquote body br
-button canvas caption cite code col colgroup data datalist dd del details dfn
-div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6
-head header hr html i iframe img input ins kbd keygen label legend li link
+button canvas caption cite code col colgroup data_ datalist dd del details
+dfn div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5
+h6 head header hr html i iframe img input ins kbd keygen label legend li link
 main map mark menu menuitem meta meter nav noscript object ol optgroup option
 output p param pre progress q rp rt ruby s samp script section select small
 source span strong style sub summary sup table tbody td textarea tfoot th
@@ -60,11 +45,11 @@ void_declaration = '''
 outfile.write(header)
 
 for tag in html_tags:
-    tag_ = unreserved(tag)
+    tag_ = tag.replace('_', '')
     if tag not in void_tags:
-        outfile.write(html_declaration.format(tag, tag_))
+        outfile.write(html_declaration.format(tag_, tag))
     else:
-        outfile.write(void_declaration.format(tag, tag_))
+        outfile.write(void_declaration.format(tag_, tag))
 
 outfile.close()
 
@@ -72,42 +57,49 @@ outfile.close()
 
 outfile = open('src/Alder/Html/Attributes.hs', 'w')
 
-attributes = '''
-accept accept-charset accesskey action alt async autocomplete autofocus
-autoplay challenge charset checked cite class cols colspan content
-contenteditable contextmenu controls coords data datetime defer dir disabled
-draggable enctype for form formaction formenctype formmethod formnovalidate
-formtarget headers height hidden high href hreflang http-equiv icon id ismap
-item itemprop keytype label lang list loop low manifest max maxlength media
-method min multiple name novalidate open optimum pattern ping placeholder
-preload pubdate radiogroup readonly rel required reversed rows rowspan
-sandbox scope scoped seamless selected shape size sizes span spellcheck src
-srcdoc start step style subject summary tabindex target title type usemap
-value width wrap xmlns
-'''.split()
+# TODO: change some attributes to token_set, or add new types
+attributes = {}
+
+attributes['className'] = 'token_set'
+
+tokens = '''
+accept accessKey action allowFullScreen allowTransparency alt cellPadding
+cellSpacing charset checked colSpan cols content contentEditable contextMenu
+controls data_ dateTime dir draggable encType form formNoValidate frameBorder
+height href htmlFor icon id label lang list max maxLength method min name
+pattern placeholder poster radioGroup readOnly rel role rowSpan rows sandbox
+scope scrollLeft scrollTop selected size span spellCheck src srcDoc step style
+tabIndex target title type_ value width wmode
+'''
+
+attributes.update({attr:'token' for attr in tokens.split()})
 
 booleans = '''
-async autocomplete autofocus autoplay checked contenteditable controls
-defer disabled download hidden ismap loop multiple novalidate open preload
-pubdate readonly required reversed seamless scoped spellcheck
-'''.split()
+async autocomplete autofocus autoplay checked defer disabled download hidden
+loop multiple noValidate preload readOnly required reversed seamless
+spellCheck
+'''
+
+attributes.update({attr:'boolean' for attr in booleans.split()})
 
 events = {
-    'onkeydown'   : 'KeyboardEvent',
-    'onkeypress'  : 'KeyboardEvent',
-    'onkeyup'     : 'KeyboardEvent',
-    'onfocus'     : 'FocusEvent',
-    'onblur'      : 'FocusEvent',
-    'oninput'     : 'InputEvent',
-    'onsubmit'    : 'SubmitEvent',
-    'onmousedown' : 'MouseEvent',
-    'onmouseup'   : 'MouseEvent',
-    'onclick'     : 'MouseEvent',
-    'ondblclick'  : 'MouseEvent',
-    'onmousemove' : 'MouseEvent',
-    'onmouseenter': 'MouseEvent',
-    'onmouseleave': 'MouseEvent'
+    'onKeyDown'    : 'KeyboardEvent',
+    'onKeyPress'   : 'KeyboardEvent',
+    'onKeyUp'      : 'KeyboardEvent',
+    'onFocus'      : 'FocusEvent',
+    'onBlur'       : 'FocusEvent',
+    'onInput'      : 'InputEvent',
+    'onSubmit'     : 'SubmitEvent',
+    'onMouseDown'  : 'MouseEvent',
+    'onMouseUp'    : 'MouseEvent',
+    'onClick'      : 'MouseEvent',
+    'onDoubleClick': 'MouseEvent',
+    'onMouseMove'  : 'MouseEvent',
+    'onMouseEnter' : 'MouseEvent',
+    'onMouseLeave' : 'MouseEvent'
 }
+
+attributes.update(events)
 
 header = '''\
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -122,10 +114,17 @@ import           Alder.Html.Internal
 -- This file was automatically generated by scripts/gen_html.py
 '''
 
-attr_declaration = '''
+token_declaration = '''
 -- | The @{0}@ attribute.
 {1} :: Text -> Attribute
-{1} = attribute "{0}"
+{1} = token "{0}"
+'''
+
+token_set_declaration = '''
+-- | The @{0}@ attribute. This will append to the current value of the
+-- attribute.
+{1} :: Text -> Attribute
+{1} = tokenSet "{0}"
 '''
 
 boolean_declaration = '''
@@ -142,15 +141,17 @@ event_declaration = '''
 
 outfile.write(header)
 
-for attr in sorted(attributes + list(events)):
-    attr_ = unreserved(camelCase(attr))
-    if attr in events:
-        eventType = events[attr]
+for attr in sorted(list(attributes)):
+    attr_ = attr.lower().replace('_', '')
+    if attributes[attr] == 'token':
+        outfile.write(token_declaration.format(attr_, attr))
+    elif attributes[attr] == 'token_set':
+        outfile.write(token_set_declaration.format(attr_, attr))
+    elif attributes[attr] == 'boolean':
+        outfile.write(boolean_declaration.format(attr_, attr))
+    else:
+        eventType = attributes[attr]
         eventName = attr[2:]
         outfile.write(event_declaration.format(eventName, attr, eventType))
-    elif attr in booleans:
-        outfile.write(boolean_declaration.format(attr, attr_))
-    else:
-        outfile.write(attr_declaration.format(attr, attr_))
 
 outfile.close()

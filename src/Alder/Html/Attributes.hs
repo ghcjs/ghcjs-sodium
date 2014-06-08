@@ -11,23 +11,27 @@ import           Alder.Html.Internal
 
 -- | The @accept@ attribute.
 accept :: Text -> Attribute
-accept = attribute "accept"
-
--- | The @accept-charset@ attribute.
-acceptCharset :: Text -> Attribute
-acceptCharset = attribute "accept-charset"
+accept = token "accept"
 
 -- | The @accesskey@ attribute.
-accesskey :: Text -> Attribute
-accesskey = attribute "accesskey"
+accessKey :: Text -> Attribute
+accessKey = token "accesskey"
 
 -- | The @action@ attribute.
 action :: Text -> Attribute
-action = attribute "action"
+action = token "action"
+
+-- | The @allowfullscreen@ attribute.
+allowFullScreen :: Text -> Attribute
+allowFullScreen = token "allowfullscreen"
+
+-- | The @allowtransparency@ attribute.
+allowTransparency :: Text -> Attribute
+allowTransparency = token "allowtransparency"
 
 -- | The @alt@ attribute.
 alt :: Text -> Attribute
-alt = attribute "alt"
+alt = token "alt"
 
 -- | The @async@ attribute.
 async :: Attribute
@@ -45,61 +49,58 @@ autofocus = boolean "autofocus"
 autoplay :: Attribute
 autoplay = boolean "autoplay"
 
--- | The @challenge@ attribute.
-challenge :: Text -> Attribute
-challenge = attribute "challenge"
+-- | The @cellpadding@ attribute.
+cellPadding :: Text -> Attribute
+cellPadding = token "cellpadding"
+
+-- | The @cellspacing@ attribute.
+cellSpacing :: Text -> Attribute
+cellSpacing = token "cellspacing"
 
 -- | The @charset@ attribute.
 charset :: Text -> Attribute
-charset = attribute "charset"
+charset = token "charset"
 
 -- | The @checked@ attribute.
 checked :: Attribute
 checked = boolean "checked"
 
--- | The @cite@ attribute.
-cite :: Text -> Attribute
-cite = attribute "cite"
+-- | The @classname@ attribute. This will append to the current value of the
+-- attribute.
+className :: Text -> Attribute
+className = tokenSet "classname"
 
--- | The @class@ attribute.
-class_ :: Text -> Attribute
-class_ = attribute "class"
+-- | The @colspan@ attribute.
+colSpan :: Text -> Attribute
+colSpan = token "colspan"
 
 -- | The @cols@ attribute.
 cols :: Text -> Attribute
-cols = attribute "cols"
-
--- | The @colspan@ attribute.
-colspan :: Text -> Attribute
-colspan = attribute "colspan"
+cols = token "cols"
 
 -- | The @content@ attribute.
 content :: Text -> Attribute
-content = attribute "content"
+content = token "content"
 
 -- | The @contenteditable@ attribute.
-contenteditable :: Attribute
-contenteditable = boolean "contenteditable"
+contentEditable :: Text -> Attribute
+contentEditable = token "contenteditable"
 
 -- | The @contextmenu@ attribute.
-contextmenu :: Text -> Attribute
-contextmenu = attribute "contextmenu"
+contextMenu :: Text -> Attribute
+contextMenu = token "contextmenu"
 
 -- | The @controls@ attribute.
-controls :: Attribute
-controls = boolean "controls"
-
--- | The @coords@ attribute.
-coords :: Text -> Attribute
-coords = attribute "coords"
+controls :: Text -> Attribute
+controls = token "controls"
 
 -- | The @data@ attribute.
 data_ :: Text -> Attribute
-data_ = attribute "data"
+data_ = token "data"
 
 -- | The @datetime@ attribute.
-datetime :: Text -> Attribute
-datetime = attribute "datetime"
+dateTime :: Text -> Attribute
+dateTime = token "datetime"
 
 -- | The @defer@ attribute.
 defer :: Attribute
@@ -107,143 +108,91 @@ defer = boolean "defer"
 
 -- | The @dir@ attribute.
 dir :: Text -> Attribute
-dir = attribute "dir"
+dir = token "dir"
 
 -- | The @disabled@ attribute.
 disabled :: Attribute
 disabled = boolean "disabled"
 
+-- | The @download@ attribute.
+download :: Attribute
+download = boolean "download"
+
 -- | The @draggable@ attribute.
 draggable :: Text -> Attribute
-draggable = attribute "draggable"
+draggable = token "draggable"
 
 -- | The @enctype@ attribute.
-enctype :: Text -> Attribute
-enctype = attribute "enctype"
-
--- | The @for@ attribute.
-for :: Text -> Attribute
-for = attribute "for"
+encType :: Text -> Attribute
+encType = token "enctype"
 
 -- | The @form@ attribute.
 form :: Text -> Attribute
-form = attribute "form"
-
--- | The @formaction@ attribute.
-formaction :: Text -> Attribute
-formaction = attribute "formaction"
-
--- | The @formenctype@ attribute.
-formenctype :: Text -> Attribute
-formenctype = attribute "formenctype"
-
--- | The @formmethod@ attribute.
-formmethod :: Text -> Attribute
-formmethod = attribute "formmethod"
+form = token "form"
 
 -- | The @formnovalidate@ attribute.
-formnovalidate :: Text -> Attribute
-formnovalidate = attribute "formnovalidate"
+formNoValidate :: Text -> Attribute
+formNoValidate = token "formnovalidate"
 
--- | The @formtarget@ attribute.
-formtarget :: Text -> Attribute
-formtarget = attribute "formtarget"
-
--- | The @headers@ attribute.
-headers :: Text -> Attribute
-headers = attribute "headers"
+-- | The @frameborder@ attribute.
+frameBorder :: Text -> Attribute
+frameBorder = token "frameborder"
 
 -- | The @height@ attribute.
 height :: Text -> Attribute
-height = attribute "height"
+height = token "height"
 
 -- | The @hidden@ attribute.
 hidden :: Attribute
 hidden = boolean "hidden"
 
--- | The @high@ attribute.
-high :: Text -> Attribute
-high = attribute "high"
-
 -- | The @href@ attribute.
 href :: Text -> Attribute
-href = attribute "href"
+href = token "href"
 
--- | The @hreflang@ attribute.
-hreflang :: Text -> Attribute
-hreflang = attribute "hreflang"
-
--- | The @http-equiv@ attribute.
-httpEquiv :: Text -> Attribute
-httpEquiv = attribute "http-equiv"
+-- | The @htmlfor@ attribute.
+htmlFor :: Text -> Attribute
+htmlFor = token "htmlfor"
 
 -- | The @icon@ attribute.
 icon :: Text -> Attribute
-icon = attribute "icon"
+icon = token "icon"
 
 -- | The @id@ attribute.
 id :: Text -> Attribute
-id = attribute "id"
-
--- | The @ismap@ attribute.
-ismap :: Attribute
-ismap = boolean "ismap"
-
--- | The @item@ attribute.
-item :: Text -> Attribute
-item = attribute "item"
-
--- | The @itemprop@ attribute.
-itemprop :: Text -> Attribute
-itemprop = attribute "itemprop"
-
--- | The @keytype@ attribute.
-keytype :: Text -> Attribute
-keytype = attribute "keytype"
+id = token "id"
 
 -- | The @label@ attribute.
 label :: Text -> Attribute
-label = attribute "label"
+label = token "label"
 
 -- | The @lang@ attribute.
 lang :: Text -> Attribute
-lang = attribute "lang"
+lang = token "lang"
 
 -- | The @list@ attribute.
 list :: Text -> Attribute
-list = attribute "list"
+list = token "list"
 
 -- | The @loop@ attribute.
 loop :: Attribute
 loop = boolean "loop"
 
--- | The @low@ attribute.
-low :: Text -> Attribute
-low = attribute "low"
-
--- | The @manifest@ attribute.
-manifest :: Text -> Attribute
-manifest = attribute "manifest"
-
 -- | The @max@ attribute.
 max :: Text -> Attribute
-max = attribute "max"
+max = token "max"
 
 -- | The @maxlength@ attribute.
-maxlength :: Text -> Attribute
-maxlength = attribute "maxlength"
-
--- | The @media@ attribute.
-media :: Text -> Attribute
-media = attribute "media"
+maxLength :: Text -> Attribute
+maxLength = token "maxlength"
 
 -- | The @method@ attribute.
 method :: Text -> Attribute
-method = attribute "method"
+method = token "method"
 
 -- | The @min@ attribute.
 min :: Text -> Attribute
-min = attribute "min"
+min = token "min"
 
 -- | The @multiple@ attribute.
 multiple :: Attribute
@@ -251,107 +200,95 @@ multiple = boolean "multiple"
 
 -- | The @name@ attribute.
 name :: Text -> Attribute
-name = attribute "name"
+name = token "name"
 
 -- | The @novalidate@ attribute.
-novalidate :: Attribute
-novalidate = boolean "novalidate"
+noValidate :: Attribute
+noValidate = boolean "novalidate"
 
--- | Set the handler for the @blur@ event.
-onblur :: Handler f => f E.FocusEvent -> Attribute
-onblur = onEvent "blur"
+-- | Set the handler for the @Blur@ event.
+onBlur :: Handler f => f E.FocusEvent -> Attribute
+onBlur = onEvent "Blur"
 
--- | Set the handler for the @click@ event.
-onclick :: Handler f => f E.MouseEvent -> Attribute
-onclick = onEvent "click"
+-- | Set the handler for the @Click@ event.
+onClick :: Handler f => f E.MouseEvent -> Attribute
+onClick = onEvent "Click"
 
--- | Set the handler for the @dblclick@ event.
-ondblclick :: Handler f => f E.MouseEvent -> Attribute
-ondblclick = onEvent "dblclick"
+-- | Set the handler for the @DoubleClick@ event.
+onDoubleClick :: Handler f => f E.MouseEvent -> Attribute
+onDoubleClick = onEvent "DoubleClick"
 
--- | Set the handler for the @focus@ event.
-onfocus :: Handler f => f E.FocusEvent -> Attribute
-onfocus = onEvent "focus"
+-- | Set the handler for the @Focus@ event.
+onFocus :: Handler f => f E.FocusEvent -> Attribute
+onFocus = onEvent "Focus"
 
--- | Set the handler for the @input@ event.
-oninput :: Handler f => f E.InputEvent -> Attribute
-oninput = onEvent "input"
+-- | Set the handler for the @Input@ event.
+onInput :: Handler f => f E.InputEvent -> Attribute
+onInput = onEvent "Input"
 
--- | Set the handler for the @keydown@ event.
-onkeydown :: Handler f => f E.KeyboardEvent -> Attribute
-onkeydown = onEvent "keydown"
+-- | Set the handler for the @KeyDown@ event.
+onKeyDown :: Handler f => f E.KeyboardEvent -> Attribute
+onKeyDown = onEvent "KeyDown"
 
--- | Set the handler for the @keypress@ event.
-onkeypress :: Handler f => f E.KeyboardEvent -> Attribute
-onkeypress = onEvent "keypress"
+-- | Set the handler for the @KeyPress@ event.
+onKeyPress :: Handler f => f E.KeyboardEvent -> Attribute
+onKeyPress = onEvent "KeyPress"
 
--- | Set the handler for the @keyup@ event.
-onkeyup :: Handler f => f E.KeyboardEvent -> Attribute
-onkeyup = onEvent "keyup"
+-- | Set the handler for the @KeyUp@ event.
+onKeyUp :: Handler f => f E.KeyboardEvent -> Attribute
+onKeyUp = onEvent "KeyUp"
 
--- | Set the handler for the @mousedown@ event.
-onmousedown :: Handler f => f E.MouseEvent -> Attribute
-onmousedown = onEvent "mousedown"
+-- | Set the handler for the @MouseDown@ event.
+onMouseDown :: Handler f => f E.MouseEvent -> Attribute
+onMouseDown = onEvent "MouseDown"
 
--- | Set the handler for the @mouseenter@ event.
-onmouseenter :: Handler f => f E.MouseEvent -> Attribute
-onmouseenter = onEvent "mouseenter"
+-- | Set the handler for the @MouseEnter@ event.
+onMouseEnter :: Handler f => f E.MouseEvent -> Attribute
+onMouseEnter = onEvent "MouseEnter"
 
--- | Set the handler for the @mouseleave@ event.
-onmouseleave :: Handler f => f E.MouseEvent -> Attribute
-onmouseleave = onEvent "mouseleave"
+-- | Set the handler for the @MouseLeave@ event.
+onMouseLeave :: Handler f => f E.MouseEvent -> Attribute
+onMouseLeave = onEvent "MouseLeave"
 
--- | Set the handler for the @mousemove@ event.
-onmousemove :: Handler f => f E.MouseEvent -> Attribute
-onmousemove = onEvent "mousemove"
+-- | Set the handler for the @MouseMove@ event.
+onMouseMove :: Handler f => f E.MouseEvent -> Attribute
+onMouseMove = onEvent "MouseMove"
 
--- | Set the handler for the @mouseup@ event.
-onmouseup :: Handler f => f E.MouseEvent -> Attribute
-onmouseup = onEvent "mouseup"
+-- | Set the handler for the @MouseUp@ event.
+onMouseUp :: Handler f => f E.MouseEvent -> Attribute
+onMouseUp = onEvent "MouseUp"
 
--- | Set the handler for the @submit@ event.
-onsubmit :: Handler f => f E.SubmitEvent -> Attribute
-onsubmit = onEvent "submit"
-
--- | The @open@ attribute.
-open :: Attribute
-open = boolean "open"
-
--- | The @optimum@ attribute.
-optimum :: Text -> Attribute
-optimum = attribute "optimum"
+-- | Set the handler for the @Submit@ event.
+onSubmit :: Handler f => f E.SubmitEvent -> Attribute
+onSubmit = onEvent "Submit"
 
 -- | The @pattern@ attribute.
 pattern :: Text -> Attribute
-pattern = attribute "pattern"
-
--- | The @ping@ attribute.
-ping :: Text -> Attribute
-ping = attribute "ping"
+pattern = token "pattern"
 
 -- | The @placeholder@ attribute.
 placeholder :: Text -> Attribute
-placeholder = attribute "placeholder"
+placeholder = token "placeholder"
+
+-- | The @poster@ attribute.
+poster :: Text -> Attribute
+poster = token "poster"
 
 -- | The @preload@ attribute.
 preload :: Attribute
 preload = boolean "preload"
 
--- | The @pubdate@ attribute.
-pubdate :: Attribute
-pubdate = boolean "pubdate"
-
 -- | The @radiogroup@ attribute.
-radiogroup :: Text -> Attribute
-radiogroup = attribute "radiogroup"
+radioGroup :: Text -> Attribute
+radioGroup = token "radiogroup"
 
 -- | The @readonly@ attribute.
-readonly :: Attribute
-readonly = boolean "readonly"
+readOnly :: Attribute
+readOnly = boolean "readonly"
 
 -- | The @rel@ attribute.
 rel :: Text -> Attribute
-rel = attribute "rel"
+rel = token "rel"
 
 -- | The @required@ attribute.
 required :: Attribute
@@ -361,25 +298,33 @@ required = boolean "required"
 reversed :: Attribute
 reversed = boolean "reversed"
 
--- | The @rows@ attribute.
-rows :: Text -> Attribute
-rows = attribute "rows"
+-- | The @role@ attribute.
+role :: Text -> Attribute
+role = token "role"
 
 -- | The @rowspan@ attribute.
-rowspan :: Text -> Attribute
-rowspan = attribute "rowspan"
+rowSpan :: Text -> Attribute
+rowSpan = token "rowspan"
+
+-- | The @rows@ attribute.
+rows :: Text -> Attribute
+rows = token "rows"
 
 -- | The @sandbox@ attribute.
 sandbox :: Text -> Attribute
-sandbox = attribute "sandbox"
+sandbox = token "sandbox"
 
 -- | The @scope@ attribute.
 scope :: Text -> Attribute
-scope = attribute "scope"
+scope = token "scope"
 
--- | The @scoped@ attribute.
-scoped :: Attribute
-scoped = boolean "scoped"
+-- | The @scrollleft@ attribute.
+scrollLeft :: Text -> Attribute
+scrollLeft = token "scrollleft"
+
+-- | The @scrolltop@ attribute.
+scrollTop :: Text -> Attribute
+scrollTop = token "scrolltop"
 
 -- | The @seamless@ attribute.
 seamless :: Attribute
@@ -387,88 +332,60 @@ seamless = boolean "seamless"
 
 -- | The @selected@ attribute.
 selected :: Text -> Attribute
-selected = attribute "selected"
-
--- | The @shape@ attribute.
-shape :: Text -> Attribute
-shape = attribute "shape"
+selected = token "selected"
 
 -- | The @size@ attribute.
 size :: Text -> Attribute
-size = attribute "size"
-
--- | The @sizes@ attribute.
-sizes :: Text -> Attribute
-sizes = attribute "sizes"
+size = token "size"
 
 -- | The @span@ attribute.
 span :: Text -> Attribute
-span = attribute "span"
+span = token "span"
 
 -- | The @spellcheck@ attribute.
-spellcheck :: Attribute
-spellcheck = boolean "spellcheck"
+spellCheck :: Attribute
+spellCheck = boolean "spellcheck"
 
 -- | The @src@ attribute.
 src :: Text -> Attribute
-src = attribute "src"
+src = token "src"
 
 -- | The @srcdoc@ attribute.
-srcdoc :: Text -> Attribute
-srcdoc = attribute "srcdoc"
-
--- | The @start@ attribute.
-start :: Text -> Attribute
-start = attribute "start"
+srcDoc :: Text -> Attribute
+srcDoc = token "srcdoc"
 
 -- | The @step@ attribute.
 step :: Text -> Attribute
-step = attribute "step"
+step = token "step"
 
 -- | The @style@ attribute.
 style :: Text -> Attribute
-style = attribute "style"
-
--- | The @subject@ attribute.
-subject :: Text -> Attribute
-subject = attribute "subject"
-
--- | The @summary@ attribute.
-summary :: Text -> Attribute
-summary = attribute "summary"
+style = token "style"
 
 -- | The @tabindex@ attribute.
-tabindex :: Text -> Attribute
-tabindex = attribute "tabindex"
+tabIndex :: Text -> Attribute
+tabIndex = token "tabindex"
 
 -- | The @target@ attribute.
 target :: Text -> Attribute
-target = attribute "target"
+target = token "target"
 
 -- | The @title@ attribute.
 title :: Text -> Attribute
-title = attribute "title"
+title = token "title"
 
 -- | The @type@ attribute.
 type_ :: Text -> Attribute
-type_ = attribute "type"
-
--- | The @usemap@ attribute.
-usemap :: Text -> Attribute
-usemap = attribute "usemap"
+type_ = token "type"
 
 -- | The @value@ attribute.
 value :: Text -> Attribute
-value = attribute "value"
+value = token "value"
 
 -- | The @width@ attribute.
 width :: Text -> Attribute
-width = attribute "width"
+width = token "width"
 
--- | The @wrap@ attribute.
-wrap :: Text -> Attribute
-wrap = attribute "wrap"
-
--- | The @xmlns@ attribute.
-xmlns :: Text -> Attribute
-xmlns = attribute "xmlns"
+-- | The @wmode@ attribute.
+wmode :: Text -> Attribute
+wmode = token "wmode"

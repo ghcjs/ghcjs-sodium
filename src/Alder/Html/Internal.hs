@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 module Alder.Html.Internal
     ( -- * Elements
       Node(..)
@@ -21,6 +22,10 @@ module Alder.Html.Internal
     , Attributable
     , (!)
     , (!?)
+    , (!#)
+    , (!.)
+    , (!?.)
+      -- * Creating attributes
     , token
     , tokenSet
     , boolean
@@ -36,7 +41,7 @@ import           Unsafe.Coerce
 
 import           Alder.JavaScript
 
-infixl 1 !, !?
+infixl 1 !, !?, !#, !., !?.
 
 data AttributeValue
     = Token !Text
@@ -118,6 +123,15 @@ instance Attributable h => Attributable (r -> h) where
 
 (!?) :: Attributable h => h -> (Bool, Attribute) -> h
 h !? (p, a) = if p then h ! a else h
+
+(!#) :: Attributable h => h -> Text -> h
+h !# v = h ! token "id" v
+
+(!.) :: Attributable h => h -> Text -> h
+h !. v = h ! tokenSet "className" v
+
+(!?.) :: Attributable h => h -> (Bool, Text) -> h
+h !?. (p, v) = if p then h !. v else h
 
 attribute :: Text -> (Maybe AttributeValue -> AttributeValue) -> Attribute
 attribute k f = Attribute $ \a ->
