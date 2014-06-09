@@ -83,21 +83,21 @@ spellCheck
 attributes.update({attr:'boolean' for attr in booleans.split()})
 
 events = {
-    'onKeyDown'    : ('keydown'  , 'KeyboardEvent'),
-    'onKeyPress'   : ('keypress' , 'KeyboardEvent'),
-    'onKeyUp'      : ('keyup'    , 'KeyboardEvent'),
-    'onFocus'      : ('focus'    , 'FocusEvent'),
-    'onBlur'       : ('blur'     , 'FocusEvent'),
-    'onInput'      : ('input'    , 'InputEvent'),
-    'onChange'     : ('change'   , 'InputEvent'),
-    'onSubmit'     : ('submit'   , 'SubmitEvent'),
-    'onMouseDown'  : ('mousedown', 'MouseEvent'),
-    'onMouseUp'    : ('mouseup'  , 'MouseEvent'),
-    'onClick'      : ('click'    , 'MouseEvent'),
-    'onDoubleClick': ('dblclick' , 'MouseEvent'),
-    'onMouseMove'  : ('mousemove', 'MouseEvent'),
-    'onMouseEnter' : ('mouseover', 'MouseEvent'),
-    'onMouseLeave' : ('mouseout' , 'MouseEvent')
+    'onKeyDown'    : 'KeyboardEvent',
+    'onKeyPress'   : 'KeyboardEvent',
+    'onKeyUp'      : 'KeyboardEvent',
+    'onFocus'      : 'FocusEvent',
+    'onBlur'       : 'FocusEvent',
+    'onInput'      : 'InputEvent',
+    'onChange'     : 'InputEvent',
+    'onSubmit'     : 'SubmitEvent',
+    'onMouseDown'  : 'MouseEvent',
+    'onMouseUp'    : 'MouseEvent',
+    'onClick'      : 'MouseEvent',
+    'onDoubleClick': 'MouseEvent',
+    'onMouseMove'  : 'MouseEvent',
+    'onMouseEnter' : 'MouseEvent',
+    'onMouseLeave' : 'MouseEvent'
 }
 
 attributes.update(events)
@@ -137,7 +137,7 @@ boolean_declaration = '''
 event_declaration = '''
 -- | Set the handler for the @{0}@ event.
 {1} :: Handler f => f E.{2} -> Attribute
-{1} = onEvent "{0}"
+{1} = onEvent {0}
 '''
 
 outfile.write(header)
@@ -151,7 +151,8 @@ for attr in sorted(list(attributes)):
     elif attributes[attr] == 'boolean':
         outfile.write(boolean_declaration.format(attr_, attr))
     else:
-        eventName, eventType = attributes[attr]
+        eventType = attributes[attr]
+        eventName = attr[2:]
         outfile.write(event_declaration.format(eventName, attr, eventType))
 
 outfile.close()

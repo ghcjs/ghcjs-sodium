@@ -33,6 +33,7 @@ library
     contravariant,
     dlist,
     ghcjs-base,
+    hashable,
     mtl,
     sodium,
     text,

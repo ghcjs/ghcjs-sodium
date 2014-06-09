@@ -42,33 +42,26 @@ mount = do
         { nextName = 0
         , nameMap  = HashMap.empty
         }
-    listen $ \eventName ev -> runIOState (dispatch eventName ev) ref
+    listen $ \eventType ev -> runIOState (dispatch eventType ev) ref
     return $ \html -> runIOState (update html) ref
 
-listen :: (Text -> JSObj -> IO ()) -> IO ()
+listen :: (EventType -> JSObj -> IO ()) -> IO ()
 listen callback = do
     document <- window .: "document"
-    forM_ eventNames $ \(eventName, useCapture) -> do
-        jsCallback <- syncCallback1 AlwaysRetain False $ callback eventName
-        ignore $ apply document "addEventListener" (eventName, jsCallback, useCapture)
-  where
-    eventNames =
-        [ ("keydown"   , False)
-        , ("keypress"  , False)
-        , ("keyup"     , False)
-        , ("focus"     , True)
-        , ("blur"      , True)
-        , ("input"     , False)
-        , ("change"    , False)
-        , ("submit"    , True)
-        , ("mousedown" , False)
-        , ("mouseup"   , False)
-        , ("click"     , False)
-        , ("dblclick"  , False)
-        , ("mousemove" , False)
-        , ("mouseover" , False)
-        , ("mouseout"  , False)
-        ]
+    forM_ [minBound .. maxBound] $ \eventType -> do
+        jsCallback <- syncCallback1 AlwaysRetain False $ callback eventType
+        ignore $ apply document "addEventListener"
+            (eventName eventType, jsCallback, useCapture eventType)
+
+eventName :: EventType -> Text
+eventName eventType = case eventType of
+    DoubleClick -> "dblclick"
+    MouseEnter  -> "mouseover"
+    MouseLeave  -> "mouseout"
+    _           -> Text.toLower . Text.pack $ show eventType
+
+useCapture :: EventType -> Bool
+useCapture = (`elem` [Focus, Blur, Submit])
 
 nameAttr :: Text
 nameAttr = "data-alder-id"
@@ -88,11 +81,11 @@ retrieve n = runMaybeT $ do
     name <- MaybeT . return $ readMaybe (Text.unpack attr)
     MaybeT $ gets (HashMap.lookup name . nameMap)
 
-dispatch :: Text -> JSObj -> Mount ()
-dispatch eventName ev = void . runMaybeT $ do
+dispatch :: EventType -> JSObj -> Mount ()
+dispatch eventType ev = void . runMaybeT $ do
     target  <- MaybeT $ ev .: "target"
     Element _ attrs <- MaybeT $ retrieve target
-    case HashMap.lookup eventName (handlers attrs) of
+    case HashMap.lookup eventType (handlers attrs) of
         Nothing -> return ()
         Just h  -> liftIO $ h ev
 

@@ -15,8 +15,9 @@ module Alder.Html.Internal
     , leaf
     , text
       -- * Event handlers
-    , Handler(..)
+    , EventType(..)
     , Event(..)
+    , Handler(..)
       -- * Setting attributes
     , Attribute
     , Attributable
@@ -34,6 +35,7 @@ module Alder.Html.Internal
 
 import           Control.Applicative
 import           Data.DList          as DList
+import           Data.Hashable
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
 import           Data.Text           as Text
@@ -51,7 +53,7 @@ data AttributeValue
 
 data Attributes = Attributes
     { attributeValues :: !(HashMap Text AttributeValue)
-    , handlers        :: !(HashMap Text (JSObj -> IO ()))
+    , handlers        :: !(HashMap EventType (JSObj -> IO ()))
     }
 
 data Element = Element !Text Attributes
@@ -100,11 +102,22 @@ text t = HtmlM $ \_ -> DList.singleton (Text t)
 addAttribute :: Attribute -> HtmlM a -> HtmlM a
 addAttribute (Attribute f) (HtmlM g) = HtmlM (g . f)
 
-class Handler f where
-    fire :: f e -> e -> IO ()
+data EventType
+    = KeyDown | KeyPress | KeyUp
+    | Focus | Blur
+    | Input | Change
+    | Submit
+    | MouseDown | MouseUp | Click | DoubleClick | MouseMove | MouseEnter | MouseLeave
+    deriving (Eq, Ord, Read, Show, Enum, Bounded)
+
+instance Hashable EventType where
+    hashWithSalt s = hashWithSalt s . fromEnum
 
 class Event e where
     extractEvent :: JSObj -> IO e
+
+class Handler f where
+    fire :: f e -> e -> IO ()
 
 newtype Attribute = Attribute (Attributes -> Attributes)
 
@@ -150,7 +163,7 @@ tokenSet k v = attribute k $ \u -> case u of
 boolean :: Text -> Attribute
 boolean k = attribute k (\_ -> Boolean)
 
-onEvent :: (Handler f, Event e) => Text -> f e -> Attribute
+onEvent :: (Handler f, Event e) => EventType -> f e -> Attribute
 onEvent k handler = Attribute $ \a ->
     a { handlers = HashMap.insert k h (handlers a) }
   where
