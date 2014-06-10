@@ -16,9 +16,12 @@ import           Alder.Html.Internal
 
 type Id = Text
 
+data AttributesDiff = AttributesDiff [Text] [(Text, AttributeValue)]
+    deriving (Show)
+
 data Diff
-    = Match !Id Attributes Attributes Diff Diff
-    | Relabel Attributes Attributes Diff Diff
+    = Match !Id Node AttributesDiff Diff Diff
+    | Relabel Node AttributesDiff Diff Diff
     | Revalue Text Diff
     | Replace Node Diff
     | Add Node Diff
@@ -27,16 +30,20 @@ data Diff
     | End
 
 instance Show Diff where
-    showsPrec _ (Match i _ _ d1 d2)
+    showsPrec _ (Match i _ a d1 d2)
         = showString "Match "
         . shows i
+        . showChar ' '
+        . shows a
         . showString " ("
         . shows d1
         . showString ") -> "
         . shows d2
 
-    showsPrec _ (Relabel _ _ d1 d2)
-        = showString "Relabel ("
+    showsPrec _ (Relabel _ a d1 d2)
+        = showString "Relabel "
+        . shows a
+        . showString " ("
         . shows d1
         . showString ") -> "
         . shows d2
@@ -106,7 +113,7 @@ diffM a b = do
         , Element t2 a2 cs2 <- y
         , getId x == getId y
         , t1 == t2
-        = Relabel a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
+        = Relabel y (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
 
     go index xs (y:ys)
         | Just i <- getId y
@@ -115,8 +122,21 @@ diffM a b = do
         , Element t2 a2 cs2 <- y
         , t1 == t2
         = put (HashMap.delete i index) >>
-          Match i a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
+          Match i y (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
 
     go _ xs     (y:ys) = Add y <$> diffM xs ys
     go _ (_:xs) ys     = Drop  <$> diffM xs ys
     go _ []     []     = return End
+
+diffAttributes :: Attributes -> Attributes -> AttributesDiff
+diffAttributes a1 a2 = AttributesDiff old new
+  where
+    (m1, m2) = (attributeValues a1, attributeValues a2)
+    old      = Prelude.filter dead (HashMap.keys m1)
+    new      = Prelude.filter replaces (HashMap.toList m2)
+
+    dead k = not (HashMap.member k m2)
+
+    replaces (k, v) = case HashMap.lookup k m1 of
+        Just u | u == v -> False
+        _               -> True
