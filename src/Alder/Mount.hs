@@ -13,6 +13,7 @@ import           Data.IORef
 import           Data.Text                 as Text
 import           GHCJS.Foreign
 
+import           Alder.Diff
 import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript
@@ -23,7 +24,8 @@ type Name = Int
 
 data MountState = MountState
     { nextName :: !Name
-    , nameMap  :: !(HashMap Name Element)
+    , model    :: [Node]
+    , nameMap  :: !(HashMap Name Node)
     }
 
 type Mount = IOState MountState
@@ -40,6 +42,7 @@ mount :: IO (Html -> IO ())
 mount = do
     ref <- newIORef MountState
         { nextName = 0
+        , model    = []
         , nameMap  = HashMap.empty
         }
     listen $ \eventType ev -> runIOState (dispatch eventType ev) ref
@@ -66,7 +69,7 @@ useCapture = (`elem` [Focus, Blur, Submit])
 nameAttr :: Text
 nameAttr = "data-alder-id"
 
-register :: DOMNode -> Element -> Mount ()
+register :: DOMNode -> Node -> Mount ()
 register n e = do
     name <- gets nextName
     ignore $ apply n "setAttribute" (nameAttr, Text.pack $ show name)
@@ -75,7 +78,7 @@ register n e = do
         , nameMap  = HashMap.insert name e (nameMap s)
         }
 
-retrieve :: DOMNode -> Mount (Maybe Element)
+retrieve :: DOMNode -> Mount (Maybe Node)
 retrieve n = runMaybeT $ do
     attr <- MaybeT $ call n "getAttribute" nameAttr
     name <- MaybeT . return $ readMaybe (Text.unpack attr)
@@ -84,18 +87,20 @@ retrieve n = runMaybeT $ do
 dispatch :: EventType -> JSObj -> Mount ()
 dispatch eventType ev = void . runMaybeT $ do
     target  <- MaybeT $ ev .: "target"
-    Element _ attrs <- MaybeT $ retrieve target
+    Element _ attrs _ <- MaybeT $ retrieve target
     case HashMap.lookup eventType (handlers attrs) of
         Nothing -> return ()
         Just h  -> liftIO $ h ev
 
 update :: Html -> Mount ()
 update html = do
+    old <- gets model
     let new = runHtml html
+    liftIO . print $ diffForests old new
     document <- window .: "document"
     body <- document .: "body"
     removeChildren body
-    modify $ \s -> s { nameMap = HashMap.empty }
+    modify $ \s -> s { model = new, nameMap = HashMap.empty }
     createChildren body new
 
 attributeValue :: AttributeValue -> Text
@@ -104,7 +109,7 @@ attributeValue (TokenSet ts) = Text.intercalate " " (Prelude.reverse ts)
 attributeValue Boolean       = ""
 
 create :: Node -> Mount DOMNode
-create (Parent e@(Element t attrs) cs) = do
+create e@(Element t attrs cs) = do
     document <- window .: "document"
     n <- call document "createElement" t
     register n e

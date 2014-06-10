@@ -49,6 +49,7 @@ library
     Alder.Sodium
 
   other-modules:
+    Alder.Diff
     Alder.Html.Internal
     Alder.IOState
     Alder.JavaScript

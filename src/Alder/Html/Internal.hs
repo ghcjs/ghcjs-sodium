@@ -3,7 +3,6 @@
 module Alder.Html.Internal
     ( -- * Elements
       Node(..)
-    , Element(..)
       -- * Attributes
     , Attributes(..)
     , AttributeValue(..)
@@ -56,10 +55,8 @@ data Attributes = Attributes
     , handlers        :: !(HashMap EventType (JSObj -> IO ()))
     }
 
-data Element = Element !Text Attributes
-
 data Node
-    = Parent Element [Node]
+    = Element !Text Attributes [Node]
     | Text !Text
 
 type Html = HtmlM ()
@@ -91,10 +88,10 @@ runHtml (HtmlM f) = DList.toList (f defaultAttributes)
         }
 
 parent :: Text -> Html -> Html
-parent t h = HtmlM $ \a -> DList.singleton (Parent (Element t a) (runHtml h))
+parent t h = HtmlM $ \a -> DList.singleton (Element t a (runHtml h))
 
 leaf :: Text -> Html
-leaf t = HtmlM $ \a -> DList.singleton (Parent (Element t a) [])
+leaf t = HtmlM $ \a -> DList.singleton (Element t a [])
 
 text :: Text -> Html
 text t = HtmlM $ \_ -> DList.singleton (Text t)
