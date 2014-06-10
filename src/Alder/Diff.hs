@@ -16,8 +16,7 @@ import           Alder.Html.Internal
 
 type Id = Text
 
-data AttributesDiff = AttributesDiff [Text] [(Text, AttributeValue)]
-    deriving (Show)
+data AttributesDiff = AttributesDiff [Text] [(Text, AttributeValue)] Handlers
 
 data Diff
     = Match !Id Node AttributesDiff Diff Diff
@@ -30,20 +29,16 @@ data Diff
     | End
 
 instance Show Diff where
-    showsPrec _ (Match i _ a d1 d2)
+    showsPrec _ (Match i _ _ d1 d2)
         = showString "Match "
         . shows i
-        . showChar ' '
-        . shows a
         . showString " ("
         . shows d1
         . showString ") -> "
         . shows d2
 
-    showsPrec _ (Relabel _ a d1 d2)
-        = showString "Relabel "
-        . shows a
-        . showString " ("
+    showsPrec _ (Relabel _ _ d1 d2)
+        = showString "Relabel ("
         . shows d1
         . showString ") -> "
         . shows d2
@@ -74,8 +69,8 @@ instance Show Diff where
         = showString "End"
 
 getId :: Node -> Maybe Id
-getId (Element _ as _)
-    | Just (Token i) <- HashMap.lookup "id" (attributeValues as)
+getId (Element _ (Attributes m _) _)
+    | Just (Token i) <- HashMap.lookup "id" m
     = Just i
 getId _ = Nothing
 
@@ -129,11 +124,10 @@ diffM a b = do
     go _ []     []     = return End
 
 diffAttributes :: Attributes -> Attributes -> AttributesDiff
-diffAttributes a1 a2 = AttributesDiff old new
+diffAttributes (Attributes m1 _) (Attributes m2 h) = AttributesDiff old new h
   where
-    (m1, m2) = (attributeValues a1, attributeValues a2)
-    old      = Prelude.filter dead (HashMap.keys m1)
-    new      = Prelude.filter replaces (HashMap.toList m2)
+    old = Prelude.filter dead (HashMap.keys m1)
+    new = Prelude.filter replaces (HashMap.toList m2)
 
     dead k = not (HashMap.member k m2)
 

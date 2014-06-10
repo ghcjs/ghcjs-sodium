@@ -25,7 +25,7 @@ type Name = Int
 data MountState = MountState
     { nextName :: !Name
     , model    :: [Node]
-    , nameMap  :: !(HashMap Name Node)
+    , handlers :: !(HashMap Name Handlers)
     }
 
 type Mount = IOState MountState
@@ -33,17 +33,17 @@ type Mount = IOState MountState
 ignore :: m () -> m ()
 ignore = id
 
-readMaybe :: Read a => String -> Maybe a
+readMaybe :: (MonadPlus m, Read a) => String -> m a
 readMaybe s = case reads s of
-    [(a,"")] -> Just a
-    _        -> Nothing
+    [(a,"")] -> return a
+    _        -> mzero
 
 mount :: IO (Html -> IO ())
 mount = do
     ref <- newIORef MountState
         { nextName = 0
         , model    = []
-        , nameMap  = HashMap.empty
+        , handlers = HashMap.empty
         }
     listen $ \eventType ev -> runIOState (dispatch eventType ev) ref
     return $ \html -> runIOState (update html) ref
@@ -69,26 +69,22 @@ useCapture = (`elem` [Focus, Blur, Submit])
 nameAttr :: Text
 nameAttr = "data-alder-id"
 
-register :: DOMNode -> Node -> Mount ()
-register n e = do
+register :: DOMNode -> Handlers -> Mount ()
+register n hs = do
     name <- gets nextName
     ignore $ apply n "setAttribute" (nameAttr, Text.pack $ show name)
     modify $ \s -> s
         { nextName = name + 1
-        , nameMap  = HashMap.insert name e (nameMap s)
+        , handlers = HashMap.insert name hs (handlers s)
         }
-
-retrieve :: DOMNode -> Mount (Maybe Node)
-retrieve n = runMaybeT $ do
-    attr <- MaybeT $ call n "getAttribute" nameAttr
-    name <- MaybeT . return $ readMaybe (Text.unpack attr)
-    MaybeT $ gets (HashMap.lookup name . nameMap)
 
 dispatch :: EventType -> JSObj -> Mount ()
 dispatch eventType ev = void . runMaybeT $ do
-    target  <- MaybeT $ ev .: "target"
-    Element _ attrs _ <- MaybeT $ retrieve target
-    case HashMap.lookup eventType (handlers attrs) of
+    target <- MaybeT $ ev .: "target"
+    attr   <- MaybeT $ call target "getAttribute" nameAttr
+    name   <- readMaybe (Text.unpack attr)
+    hs     <- MaybeT $ gets (HashMap.lookup name . handlers)
+    case HashMap.lookup eventType hs of
         Nothing -> return ()
         Just h  -> liftIO $ h ev
 
@@ -100,7 +96,7 @@ update html = do
     document <- window .: "document"
     body <- document .: "body"
     removeChildren body
-    modify $ \s -> s { model = new, nameMap = HashMap.empty }
+    modify $ \s -> s { model = new, handlers = HashMap.empty }
     createChildren body new
 
 attributeValue :: AttributeValue -> Text
@@ -109,11 +105,11 @@ attributeValue (TokenSet ts) = Text.intercalate " " (Prelude.reverse ts)
 attributeValue Boolean       = ""
 
 create :: Node -> Mount DOMNode
-create e@(Element t attrs cs) = do
+create (Element t (Attributes m hs) cs) = do
     document <- window .: "document"
     n <- call document "createElement" t
-    register n e
-    forM_ (HashMap.toList $ attributeValues attrs) $ \(k, v) ->
+    register n hs
+    forM_ (HashMap.toList m) $ \(k, v) ->
         ignore $ apply n "setAttribute" (k, attributeValue v)
     createChildren n cs
     return n
