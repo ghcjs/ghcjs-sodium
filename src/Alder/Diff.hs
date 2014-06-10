@@ -68,11 +68,11 @@ instance Show Diff where
     showsPrec _ End
         = showString "End"
 
-getId :: Node -> Maybe Id
-getId (Element _ (Attributes m _) _)
+nodeId :: Node -> Maybe Id
+nodeId (Element _ (Attributes m _) _)
     | Just (Token i) <- HashMap.lookup "id" m
     = Just i
-getId _ = Nothing
+nodeId _ = Nothing
 
 children :: Node -> [Node]
 children (Element _ _ cs) = cs
@@ -84,9 +84,9 @@ descendants n = n : concatMap descendants (children n)
 diff :: [Node] -> [Node] -> Diff
 diff a b = evalState (diffM a b) index
   where
-    index = HashMap.fromList . mapMaybe toId $ concatMap descendants a
+    index = HashMap.fromList . mapMaybe withId $ concatMap descendants a
 
-    toId e = (\i -> (i, e)) <$> getId e
+    withId e = (\i -> (i, e)) <$> nodeId e
 
 diffM :: [Node] -> [Node] -> State (HashMap Id Node) Diff
 diffM a b = do
@@ -94,7 +94,7 @@ diffM a b = do
     go index a b
   where
     go index (x:xs) ys
-        | Just i <- getId x
+        | Just i <- nodeId x
         , not (HashMap.member i index)
         = diffM xs ys
 
@@ -106,12 +106,12 @@ diffM a b = do
     go _ (x:xs) (y:ys)
         | Element t1 a1 cs1 <- x
         , Element t2 a2 cs2 <- y
-        , getId x == getId y
+        , nodeId x == nodeId y
         , t1 == t2
         = Relabel y (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
 
     go index xs (y:ys)
-        | Just i <- getId y
+        | Just i <- nodeId y
         , Just x <- HashMap.lookup i index
         , Element t1 a1 cs1 <- x
         , Element t2 a2 cs2 <- y
