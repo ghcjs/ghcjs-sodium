@@ -96,7 +96,7 @@ update :: Html -> Mount ()
 update html = do
     old <- gets model
     let new = runHtml html
-    liftIO . print $ diffForests old new
+    liftIO . print $ diff old new
     document <- window .: "document"
     body <- document .: "body"
     removeChildren body
