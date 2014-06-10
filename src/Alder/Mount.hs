@@ -46,6 +46,9 @@ mount = do
         , handlers = HashMap.empty
         }
     listen $ \eventType ev -> runIOState (dispatch eventType ev) ref
+    document <- window .: "document"
+    body <- document .: "body"
+    removeChildren body
     return $ \html -> runIOState (update html) ref
 
 listen :: (EventType -> JSObj -> IO ()) -> IO ()
@@ -95,7 +98,7 @@ update html = do
     document <- window .: "document"
     body <- document .: "body"
     modify $ \s -> s { model = new, handlers = HashMap.empty }
-    index <- createIndex body
+    index <- liftIO $ createIndex body
     updateChildren index body (diff old new)
 
 attributeValue :: AttributeValue -> Text
@@ -111,8 +114,7 @@ updateChildren index n d0 = do
     go c' (Match i a d1 d2) = do
         let c = case HashMap.lookup i index of
                 Nothing -> error $ "updateChildren: id " ++
-                                   Text.unpack i ++
-                                   " not found"
+                                   show i ++ " not found"
                 Just r  -> r
 
         r <- c .: "parentNode"
@@ -146,14 +148,13 @@ updateChildren index n d0 = do
         ignore $ call n "removeChild" c
         go c' d
 
-
     go (Just c) (Pass d) = do
         c' <- c .: "nextSibling"
         go c' d
 
     go Nothing End = return ()
 
-    go _ _ = error "updateChildren: invalid diff"
+    go _ d = error $ "updateChildren: invalid diff " ++ show d
 
 updateAttributes :: DOMNode -> AttributesDiff -> Mount ()
 updateAttributes n (AttributesDiff old new hs) = do
@@ -182,7 +183,7 @@ createChildren n cs = do
     forM_ children $ \child ->
         ignore $ call n "appendChild" child
 
-createIndex :: DOMNode -> Mount (HashMap Id DOMNode)
+createIndex :: DOMNode -> IO (HashMap Id DOMNode)
 createIndex n = do
     list <- call n "getElementsByTagName" ("*" :: Text)
     len  <- list .: "length"
@@ -191,8 +192,19 @@ createIndex n = do
     go m j list
         | j < 0     = return m
         | otherwise = do
-            e <- call list "index" j
+            e <- call list "item" j
             attr <- call e "getAttribute" ("id" :: Text)
             case attr of
                 Nothing -> go m (j - 1) list
                 Just i  -> go (HashMap.insert i e m) (j - 1) list
+
+removeChildren :: DOMNode -> IO ()
+removeChildren n = go
+  where
+    go = do
+        r <- n .: "lastChild"
+        case r of
+            Nothing -> return ()
+            Just c  -> do
+                ignore $ call n "removeChild" (c :: DOMNode)
+                go
