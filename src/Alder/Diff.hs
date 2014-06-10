@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards     #-}
 module Alder.Diff
-    ( Diff(..)
+    ( Id
+    , AttributesDiff(..)
+    , Diff(..)
     , diff
     ) where
 
@@ -19,17 +21,16 @@ type Id = Text
 data AttributesDiff = AttributesDiff [Text] [(Text, AttributeValue)] Handlers
 
 data Diff
-    = Match !Id Node AttributesDiff Diff Diff
-    | Relabel Node AttributesDiff Diff Diff
+    = Match !Id AttributesDiff Diff Diff
+    | Relabel AttributesDiff Diff Diff
     | Revalue Text Diff
-    | Replace Node Diff
     | Add Node Diff
     | Drop Diff
     | Pass Diff
     | End
 
 instance Show Diff where
-    showsPrec _ (Match i _ _ d1 d2)
+    showsPrec _ (Match i _ d1 d2)
         = showString "Match "
         . shows i
         . showString " ("
@@ -37,7 +38,7 @@ instance Show Diff where
         . showString ") -> "
         . shows d2
 
-    showsPrec _ (Relabel _ _ d1 d2)
+    showsPrec _ (Relabel _ d1 d2)
         = showString "Relabel ("
         . shows d1
         . showString ") -> "
@@ -47,10 +48,6 @@ instance Show Diff where
         = showString "Revalue "
         . shows t
         . showString " -> "
-        . shows d
-
-    showsPrec _ (Replace _ d)
-        = showString "Replace -> "
         . shows d
 
     showsPrec _ (Add _ d)
@@ -108,7 +105,7 @@ diffM a b = do
         , Element t2 a2 cs2 <- y
         , nodeId x == nodeId y
         , t1 == t2
-        = Relabel y (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
+        = Relabel (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
 
     go index xs (y:ys)
         | Just i <- nodeId y
@@ -117,7 +114,7 @@ diffM a b = do
         , Element t2 a2 cs2 <- y
         , t1 == t2
         = put (HashMap.delete i index) >>
-          Match i y (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
+          Match i (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
 
     go _ xs     (y:ys) = Add y <$> diffM xs ys
     go _ (_:xs) ys     = Drop  <$> diffM xs ys

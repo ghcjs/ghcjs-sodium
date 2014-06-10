@@ -10,7 +10,7 @@ import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe
 import           Data.HashMap.Strict       as HashMap
 import           Data.IORef
-import           Data.Text                 as Text
+import           Data.Text                 as Text hiding (index)
 import           GHCJS.Foreign
 
 import           Alder.Diff
@@ -92,17 +92,76 @@ update :: Html -> Mount ()
 update html = do
     old <- gets model
     let new = runHtml html
-    liftIO . print $ diff old new
     document <- window .: "document"
     body <- document .: "body"
-    removeChildren body
     modify $ \s -> s { model = new, handlers = HashMap.empty }
-    createChildren body new
+    index <- createIndex body
+    updateChildren index body (diff old new)
 
 attributeValue :: AttributeValue -> Text
 attributeValue (Token t)     = t
 attributeValue (TokenSet ts) = Text.intercalate " " (Prelude.reverse ts)
 attributeValue Boolean       = ""
+
+updateChildren :: HashMap Id DOMNode -> DOMNode -> Diff -> Mount ()
+updateChildren index n d0 = do
+    c <- n .: "firstChild"
+    go c d0
+  where
+    go c' (Match i a d1 d2) = do
+        let c = case HashMap.lookup i index of
+                Nothing -> error $ "updateChildren: id " ++
+                                   Text.unpack i ++
+                                   " not found"
+                Just r  -> r
+
+        r <- c .: "parentNode"
+        case r of
+            Nothing -> return ()
+            Just p  -> call p "removeChild" c
+
+        updateAttributes c a
+        updateChildren index c d1
+        ignore $ apply n "insertBefore" (c, c')
+        go c' d2
+
+    go (Just c) (Relabel a d1 d2) = do
+        c' <- c .: "nextSibling"
+        updateAttributes c a
+        updateChildren index c d1
+        go c' d2
+
+    go (Just c) (Revalue t d) = do
+        c' <- c .: "nextSibling"
+        writeProp c "nodeValue" t
+        go c' d
+
+    go c' (Add node d) = do
+        c <- create node
+        ignore $ apply n "insertBefore" (c, c')
+        go c' d
+
+    go (Just c) (Drop d) = do
+        c' <- c .: "nextSibling"
+        ignore $ call n "removeChild" c
+        go c' d
+
+
+    go (Just c) (Pass d) = do
+        c' <- c .: "nextSibling"
+        go c' d
+
+    go Nothing End = return ()
+
+    go _ _ = error "updateChildren: invalid diff"
+
+updateAttributes :: DOMNode -> AttributesDiff -> Mount ()
+updateAttributes n (AttributesDiff old new hs) = do
+    register n hs
+    forM_ old $ \k ->
+        ignore $ call n "removeAttribute" k
+    forM_ new $ \(k, v) ->
+        ignore $ apply n "setAttribute" (k, attributeValue v)
 
 create :: Node -> Mount DOMNode
 create (Element t (Attributes m hs) cs) = do
@@ -123,13 +182,17 @@ createChildren n cs = do
     forM_ children $ \child ->
         ignore $ call n "appendChild" child
 
-removeChildren :: DOMNode -> Mount ()
-removeChildren n = go
+createIndex :: DOMNode -> Mount (HashMap Id DOMNode)
+createIndex n = do
+    list <- call n "getElementsByTagName" ("*" :: Text)
+    len  <- list .: "length"
+    go HashMap.empty (len - 1 :: Int) list
   where
-    go = do
-        r <- n .: "lastChild"
-        case r of
-            Nothing -> return ()
-            Just c  -> do
-                ignore $ call n "removeChild" (c :: DOMNode)
-                go
+    go m j list
+        | j < 0     = return m
+        | otherwise = do
+            e <- call list "index" j
+            attr <- call e "getAttribute" ("id" :: Text)
+            case attr of
+                Nothing -> go m (j - 1) list
+                Just i  -> go (HashMap.insert i e m) (j - 1) list
