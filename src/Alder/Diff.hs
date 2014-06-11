@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards     #-}
 module Alder.Diff
-    ( Id
-    , AttributesDiff(..)
-    , Diff(..)
+    ( Diff(..)
     , diff
     ) where
 
@@ -16,13 +14,9 @@ import           Data.Text           (Text)
 
 import           Alder.Html.Internal
 
-type Id = Text
-
-data AttributesDiff = AttributesDiff [Text] [(Text, AttributeValue)] Handlers
-
 data Diff
-    = Match !Id AttributesDiff Diff Diff
-    | Relabel AttributesDiff Diff Diff
+    = Match Id Attributes Attributes Diff Diff
+    | Relabel Attributes Attributes Diff Diff
     | Revalue Text Diff
     | Add Node Diff
     | Drop Diff
@@ -30,7 +24,7 @@ data Diff
     | End
 
 instance Show Diff where
-    showsPrec _ (Match i _ d1 d2)
+    showsPrec _ (Match i _ _ d1 d2)
         = showString "Match "
         . shows i
         . showString " ("
@@ -38,7 +32,7 @@ instance Show Diff where
         . showString ") -> "
         . shows d2
 
-    showsPrec _ (Relabel _ d1 d2)
+    showsPrec _ (Relabel _ _ d1 d2)
         = showString "Relabel ("
         . shows d1
         . showString ") -> "
@@ -66,10 +60,8 @@ instance Show Diff where
         = showString "End"
 
 nodeId :: Node -> Maybe Id
-nodeId (Element _ (Attributes m _) _)
-    | Just (Token i) <- HashMap.lookup "id" m
-    = Just i
-nodeId _ = Nothing
+nodeId (Element _ a _) = elementId a
+nodeId _               = Nothing
 
 children :: Node -> [Node]
 children (Element _ _ cs) = cs
@@ -100,12 +92,15 @@ diffM a b = do
         , Text t2 <- y
         = (if t1 == t2 then Pass else Revalue t2) <$> diffM xs ys
 
-    go _ (x:xs) (y:ys)
+    go index (x:xs) (y:ys)
         | Element t1 a1 cs1 <- x
         , Element t2 a2 cs2 <- y
-        , nodeId x == nodeId y
+        , elementId a1 == elementId a2
         , t1 == t2
-        = Relabel (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
+        = do case elementId a2 of
+                 Nothing -> return ()
+                 Just i  -> put (HashMap.delete i index)
+             Relabel a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
 
     go index xs (y:ys)
         | Just i <- nodeId y
@@ -113,21 +108,9 @@ diffM a b = do
         , Element t1 a1 cs1 <- x
         , Element t2 a2 cs2 <- y
         , t1 == t2
-        = put (HashMap.delete i index) >>
-          Match i (diffAttributes a1 a2) <$> diffM cs1 cs2 <*> diffM xs ys
+        = do put (HashMap.delete i index)
+             Match i a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
 
     go _ xs     (y:ys) = Add y <$> diffM xs ys
     go _ (_:xs) ys     = Drop  <$> diffM xs ys
     go _ []     []     = return End
-
-diffAttributes :: Attributes -> Attributes -> AttributesDiff
-diffAttributes (Attributes m1 _) (Attributes m2 h) = AttributesDiff old new h
-  where
-    old = Prelude.filter dead (HashMap.keys m1)
-    new = Prelude.filter replaces (HashMap.toList m2)
-
-    dead k = not (HashMap.member k m2)
-
-    replaces (k, v) = case HashMap.lookup k m1 of
-        Just u | u == v -> False
-        _               -> True

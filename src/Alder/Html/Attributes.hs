@@ -11,27 +11,27 @@ import           Alder.Html.Internal
 
 -- | The @accept@ attribute.
 accept :: Text -> Attribute
-accept = token "accept"
+accept = attribute "accept"
 
 -- | The @accesskey@ attribute.
 accessKey :: Text -> Attribute
-accessKey = token "accesskey"
+accessKey = attribute "accesskey"
 
 -- | The @action@ attribute.
 action :: Text -> Attribute
-action = token "action"
+action = attribute "action"
 
 -- | The @allowfullscreen@ attribute.
 allowFullScreen :: Text -> Attribute
-allowFullScreen = token "allowfullscreen"
+allowFullScreen = attribute "allowfullscreen"
 
 -- | The @allowtransparency@ attribute.
 allowTransparency :: Text -> Attribute
-allowTransparency = token "allowtransparency"
+allowTransparency = attribute "allowtransparency"
 
 -- | The @alt@ attribute.
 alt :: Text -> Attribute
-alt = token "alt"
+alt = attribute "alt"
 
 -- | The @async@ attribute.
 async :: Attribute
@@ -51,56 +51,51 @@ autoplay = boolean "autoplay"
 
 -- | The @cellpadding@ attribute.
 cellPadding :: Text -> Attribute
-cellPadding = token "cellpadding"
+cellPadding = attribute "cellpadding"
 
 -- | The @cellspacing@ attribute.
 cellSpacing :: Text -> Attribute
-cellSpacing = token "cellspacing"
+cellSpacing = attribute "cellspacing"
 
 -- | The @charset@ attribute.
 charset :: Text -> Attribute
-charset = token "charset"
+charset = attribute "charset"
 
 -- | The @checked@ attribute.
 checked :: Attribute
 checked = boolean "checked"
 
--- | The @class@ attribute. This will append to the current value of the
--- attribute.
-class_ :: Text -> Attribute
-class_ = tokenSet "class"
-
 -- | The @colspan@ attribute.
 colSpan :: Text -> Attribute
-colSpan = token "colspan"
+colSpan = attribute "colspan"
 
 -- | The @cols@ attribute.
 cols :: Text -> Attribute
-cols = token "cols"
+cols = attribute "cols"
 
 -- | The @content@ attribute.
 content :: Text -> Attribute
-content = token "content"
+content = attribute "content"
 
 -- | The @contenteditable@ attribute.
 contentEditable :: Text -> Attribute
-contentEditable = token "contenteditable"
+contentEditable = attribute "contenteditable"
 
 -- | The @contextmenu@ attribute.
 contextMenu :: Text -> Attribute
-contextMenu = token "contextmenu"
+contextMenu = attribute "contextmenu"
 
 -- | The @controls@ attribute.
 controls :: Text -> Attribute
-controls = token "controls"
+controls = attribute "controls"
 
 -- | The @data@ attribute.
 data_ :: Text -> Attribute
-data_ = token "data"
+data_ = attribute "data"
 
 -- | The @datetime@ attribute.
 dateTime :: Text -> Attribute
-dateTime = token "datetime"
+dateTime = attribute "datetime"
 
 -- | The @defer@ attribute.
 defer :: Attribute
@@ -108,7 +103,7 @@ defer = boolean "defer"
 
 -- | The @dir@ attribute.
 dir :: Text -> Attribute
-dir = token "dir"
+dir = attribute "dir"
 
 -- | The @disabled@ attribute.
 disabled :: Attribute
@@ -120,31 +115,31 @@ download = boolean "download"
 
 -- | The @draggable@ attribute.
 draggable :: Text -> Attribute
-draggable = token "draggable"
+draggable = attribute "draggable"
 
 -- | The @enctype@ attribute.
 encType :: Text -> Attribute
-encType = token "enctype"
+encType = attribute "enctype"
 
 -- | The @for@ attribute.
 for :: Text -> Attribute
-for = token "for"
+for = attribute "for"
 
 -- | The @form@ attribute.
 form :: Text -> Attribute
-form = token "form"
+form = attribute "form"
 
 -- | The @formnovalidate@ attribute.
 formNoValidate :: Text -> Attribute
-formNoValidate = token "formnovalidate"
+formNoValidate = attribute "formnovalidate"
 
 -- | The @frameborder@ attribute.
 frameBorder :: Text -> Attribute
-frameBorder = token "frameborder"
+frameBorder = attribute "frameborder"
 
 -- | The @height@ attribute.
 height :: Text -> Attribute
-height = token "height"
+height = attribute "height"
 
 -- | The @hidden@ attribute.
 hidden :: Attribute
@@ -152,31 +147,27 @@ hidden = boolean "hidden"
 
 -- | The @href@ attribute.
 href :: Text -> Attribute
-href = token "href"
+href = attribute "href"
 
 -- | The @htmlfor@ attribute.
 htmlFor :: Text -> Attribute
-htmlFor = token "htmlfor"
+htmlFor = attribute "htmlfor"
 
 -- | The @icon@ attribute.
 icon :: Text -> Attribute
-icon = token "icon"
-
--- | The @id@ attribute.
-id :: Text -> Attribute
-id = token "id"
+icon = attribute "icon"
 
 -- | The @label@ attribute.
 label :: Text -> Attribute
-label = token "label"
+label = attribute "label"
 
 -- | The @lang@ attribute.
 lang :: Text -> Attribute
-lang = token "lang"
+lang = attribute "lang"
 
 -- | The @list@ attribute.
 list :: Text -> Attribute
-list = token "list"
+list = attribute "list"
 
 -- | The @loop@ attribute.
 loop :: Attribute
@@ -184,19 +175,19 @@ loop = boolean "loop"
 
 -- | The @max@ attribute.
 max :: Text -> Attribute
-max = token "max"
+max = attribute "max"
 
 -- | The @maxlength@ attribute.
 maxLength :: Text -> Attribute
-maxLength = token "maxlength"
+maxLength = attribute "maxlength"
 
 -- | The @method@ attribute.
 method :: Text -> Attribute
-method = token "method"
+method = attribute "method"
 
 -- | The @min@ attribute.
 min :: Text -> Attribute
-min = token "min"
+min = attribute "min"
 
 -- | The @multiple@ attribute.
 multiple :: Attribute
@@ -204,7 +195,7 @@ multiple = boolean "multiple"
 
 -- | The @name@ attribute.
 name :: Text -> Attribute
-name = token "name"
+name = attribute "name"
 
 -- | The @novalidate@ attribute.
 noValidate :: Attribute
@@ -272,15 +263,15 @@ onSubmit = onEvent Submit
 
 -- | The @pattern@ attribute.
 pattern :: Text -> Attribute
-pattern = token "pattern"
+pattern = attribute "pattern"
 
 -- | The @placeholder@ attribute.
 placeholder :: Text -> Attribute
-placeholder = token "placeholder"
+placeholder = attribute "placeholder"
 
 -- | The @poster@ attribute.
 poster :: Text -> Attribute
-poster = token "poster"
+poster = attribute "poster"
 
 -- | The @preload@ attribute.
 preload :: Attribute
@@ -288,7 +279,7 @@ preload = boolean "preload"
 
 -- | The @radiogroup@ attribute.
 radioGroup :: Text -> Attribute
-radioGroup = token "radiogroup"
+radioGroup = attribute "radiogroup"
 
 -- | The @readonly@ attribute.
 readOnly :: Attribute
@@ -296,7 +287,7 @@ readOnly = boolean "readonly"
 
 -- | The @rel@ attribute.
 rel :: Text -> Attribute
-rel = token "rel"
+rel = attribute "rel"
 
 -- | The @required@ attribute.
 required :: Attribute
@@ -308,31 +299,31 @@ reversed = boolean "reversed"
 
 -- | The @role@ attribute.
 role :: Text -> Attribute
-role = token "role"
+role = attribute "role"
 
 -- | The @rowspan@ attribute.
 rowSpan :: Text -> Attribute
-rowSpan = token "rowspan"
+rowSpan = attribute "rowspan"
 
 -- | The @rows@ attribute.
 rows :: Text -> Attribute
-rows = token "rows"
+rows = attribute "rows"
 
 -- | The @sandbox@ attribute.
 sandbox :: Text -> Attribute
-sandbox = token "sandbox"
+sandbox = attribute "sandbox"
 
 -- | The @scope@ attribute.
 scope :: Text -> Attribute
-scope = token "scope"
+scope = attribute "scope"
 
 -- | The @scrollleft@ attribute.
 scrollLeft :: Text -> Attribute
-scrollLeft = token "scrollleft"
+scrollLeft = attribute "scrollleft"
 
 -- | The @scrolltop@ attribute.
 scrollTop :: Text -> Attribute
-scrollTop = token "scrolltop"
+scrollTop = attribute "scrolltop"
 
 -- | The @seamless@ attribute.
 seamless :: Attribute
@@ -340,15 +331,15 @@ seamless = boolean "seamless"
 
 -- | The @selected@ attribute.
 selected :: Text -> Attribute
-selected = token "selected"
+selected = attribute "selected"
 
 -- | The @size@ attribute.
 size :: Text -> Attribute
-size = token "size"
+size = attribute "size"
 
 -- | The @span@ attribute.
 span :: Text -> Attribute
-span = token "span"
+span = attribute "span"
 
 -- | The @spellcheck@ attribute.
 spellCheck :: Attribute
@@ -356,44 +347,44 @@ spellCheck = boolean "spellcheck"
 
 -- | The @src@ attribute.
 src :: Text -> Attribute
-src = token "src"
+src = attribute "src"
 
 -- | The @srcdoc@ attribute.
 srcDoc :: Text -> Attribute
-srcDoc = token "srcdoc"
+srcDoc = attribute "srcdoc"
 
 -- | The @step@ attribute.
 step :: Text -> Attribute
-step = token "step"
+step = attribute "step"
 
 -- | The @style@ attribute.
 style :: Text -> Attribute
-style = token "style"
+style = attribute "style"
 
 -- | The @tabindex@ attribute.
 tabIndex :: Text -> Attribute
-tabIndex = token "tabindex"
+tabIndex = attribute "tabindex"
 
 -- | The @target@ attribute.
 target :: Text -> Attribute
-target = token "target"
+target = attribute "target"
 
 -- | The @title@ attribute.
 title :: Text -> Attribute
-title = token "title"
+title = attribute "title"
 
 -- | The @type@ attribute.
 type_ :: Text -> Attribute
-type_ = token "type"
+type_ = attribute "type"
 
 -- | The @value@ attribute.
 value :: Text -> Attribute
-value = token "value"
+value = attribute "value"
 
 -- | The @width@ attribute.
 width :: Text -> Attribute
-width = token "width"
+width = attribute "width"
 
 -- | The @wmode@ attribute.
 wmode :: Text -> Attribute
-wmode = token "wmode"
+wmode = attribute "wmode"

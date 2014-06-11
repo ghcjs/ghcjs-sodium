@@ -4,9 +4,10 @@ module Alder.Html.Internal
     ( -- * Elements
       Node(..)
       -- * Attributes
-    , Attributes(..)
-    , AttributeValue(..)
+    , Id
     , Handlers
+    , Attributes(..)
+    , defaultAttributes
       -- * Html
     , Html
     , HtmlM(..)
@@ -27,8 +28,7 @@ module Alder.Html.Internal
     , (!.)
     , (!?.)
       -- * Creating attributes
-    , token
-    , tokenSet
+    , attribute
     , boolean
     , onEvent
     ) where
@@ -49,15 +49,24 @@ data Node
     = Element !Text Attributes [Node]
     | Text !Text
 
-data Attributes = Attributes !(HashMap Text AttributeValue) !Handlers
-
-data AttributeValue
-    = Token !Text
-    | TokenSet [Text]
-    | Boolean
-    deriving (Eq, Read, Show)
+type Id = Text
 
 type Handlers = HashMap EventType (JSObj -> IO ())
+
+data Attributes = Attributes
+    { elementId       :: !(Maybe Id)
+    , elementClass    :: ![Text]
+    , otherAttributes :: !(HashMap Text Text)
+    , handlers        :: !Handlers
+    }
+
+defaultAttributes :: Attributes
+defaultAttributes = Attributes
+    { elementId       = Nothing
+    , elementClass    = []
+    , otherAttributes = HashMap.empty
+    , handlers        = HashMap.empty
+    }
 
 type Html = HtmlM ()
 
@@ -81,8 +90,6 @@ appendHtml a b = unsafeCoerce a <> unsafeCoerce b
 
 runHtml :: Html -> [Node]
 runHtml (HtmlM f) = DList.toList (f defaultAttributes)
-  where
-    defaultAttributes = Attributes HashMap.empty HashMap.empty
 
 parent :: Text -> Html -> Html
 parent t h = HtmlM $ \a -> DList.singleton (Element t a (runHtml h))
@@ -132,32 +139,28 @@ instance Attributable h => Attributable (r -> h) where
 h !? (p, a) = if p then h ! a else h
 
 (!#) :: Attributable h => h -> Text -> h
-h !# v = h ! token "id" v
+h !# v = h ! Attribute addId
+  where
+    addId a = a { elementId = Just v }
 
 (!.) :: Attributable h => h -> Text -> h
-h !. v = h ! tokenSet "class" v
+h !. v = h ! Attribute addClass
+  where
+    addClass a = a { elementClass = v : elementClass a }
 
 (!?.) :: Attributable h => h -> (Bool, Text) -> h
 h !?. (p, v) = if p then h !. v else h
 
-token :: Text -> Text -> Attribute
-token k v = Attribute $ \(Attributes m hs) ->
-    Attributes (HashMap.insert k (Token v) m) hs
-
-tokenSet :: Text -> Text -> Attribute
-tokenSet k v = Attribute $ \(Attributes m hs) ->
-    let t = case HashMap.lookup k m of
-            Just (TokenSet vs) -> TokenSet (v : vs)
-            _                  -> TokenSet [v]
-    in  Attributes (HashMap.insert k t m) hs
+attribute :: Text -> Text -> Attribute
+attribute k v = Attribute $ \a ->
+    a { otherAttributes = HashMap.insert k v (otherAttributes a) }
 
 boolean :: Text -> Attribute
-boolean k = Attribute $ \(Attributes m hs) ->
-    Attributes (HashMap.insert k Boolean m) hs
+boolean k = attribute k ""
 
 onEvent :: (Handler f, Event e) => EventType -> f e -> Attribute
-onEvent k handler = Attribute $ \(Attributes m hs) ->
-    Attributes m (HashMap.insert k h hs)
+onEvent k handler = Attribute $ \a ->
+    a { handlers = HashMap.insert k h (handlers a) }
   where
     h v = do
         e <- extractEvent v
