@@ -58,10 +58,16 @@ pointwiseM p = go
     go (x:xs) (y:ys) = do r <- p x y
                           if r then go xs ys else return False
 
+optionally :: Functor m => MaybeT m a -> m ()
+optionally = void . runMaybeT
+
 readMaybe :: (MonadPlus m, Read a) => String -> m a
 readMaybe s = case reads s of
     [(a,"")] -> return a
     _        -> mzero
+
+liftMaybe :: MonadPlus m => Maybe a -> m a
+liftMaybe = maybe mzero return
 
 mount :: IO (Html -> IO ())
 mount = do
@@ -106,13 +112,13 @@ register info@(NodeInfo i _ n) = do
     modify $ \s -> s { elements = HashMap.insert i info (elements s) }
 
 dispatch :: EventType -> JSObj -> Mount ()
-dispatch eventType ev = void . runMaybeT $ do
+dispatch eventType ev = optionally $ do
     target <- MaybeT $ ev .: "target"
     i <- MaybeT $ getId target
     NodeInfo _ attrs _ <- MaybeT $ gets (HashMap.lookup i . elements)
-    case HashMap.lookup eventType (handlers attrs) of
-        Nothing -> return ()
-        Just h  -> liftIO $ h ev
+    h <- liftMaybe $ HashMap.lookup eventType (handlers attrs)
+    liftIO $ h ev
+    when (eventType `elem` [Input, Change]) $ liftIO $ syncValue target
 
 update :: Html -> Mount ()
 update html = do
@@ -176,6 +182,7 @@ setAttributes i n a1 a2 = do
         ignore $ call n "removeAttribute" k
     forM_ new $ \(k, v) ->
         ignore $ apply n "setAttribute" (k, v)
+    liftIO $ syncValue n
   where
     idName    = fromMaybe "" . elementId
     className = Text.intercalate " " . Prelude.reverse . elementClass
@@ -203,6 +210,20 @@ create (Node (_ :< Text t) _) = do
     document <- window .: "document"
     call document "createTextNode" t
 
+syncValue :: DOMNode -> IO ()
+syncValue n = optionally $ do
+    tagName <- n .: "tagName"
+    guard $ (tagName :: Text) `elem` ["INPUT", "TEXTAREA", "SELECT"]
+
+    inputType <- n .: "type"
+    when ((inputType :: Text) `elem` ["checkbox", "radio"]) $ do
+        checked <- call n "hasAttribute" ("checked" :: Text)
+        writeProp n "checked" (checked :: Bool)
+
+    attr <- call n "getAttribute" ("value" :: Text)
+    val  <- n .: "value"
+    when (attr /= val) $ writeProp n "value" (attr :: Text)
+
 getChildren :: MonadIO m => DOMNode -> m [DOMNode]
 getChildren n = do
     c <- n .: "firstChild"
@@ -216,13 +237,7 @@ getChildren n = do
 appendChildren :: MonadIO m => DOMNode -> [DOMNode] -> m ()
 appendChildren n = mapM_ (ignore . call n "appendChild")
 
-removeChildren :: MonadIO m => DOMNode -> m ()
-removeChildren n = go
-  where
-    go = do
-        r <- n .: "firstChild"
-        Foldable.mapM_ removeChild (r :: Maybe DOMNode)
-
-    removeChild c = do
-        ignore $ call n "removeChild" c
-        go
+removeChildren :: (Functor m, MonadIO m) => DOMNode -> m ()
+removeChildren n = optionally . forever $ do
+    c <- MaybeT $ n .: "lastChild"
+    ignore $ call n "removeChild" (c :: DOMNode)
