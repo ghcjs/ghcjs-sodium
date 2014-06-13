@@ -1,38 +1,62 @@
 
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 module Alder.Mount
     ( mount
     ) where
 
+import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe
+import qualified Data.Foldable             as Foldable
 import           Data.HashMap.Strict       as HashMap
 import           Data.IORef
 import           Data.Maybe
-import           Data.Text                 as Text hiding (index)
+import           Data.Text                 as Text
+import           Data.Tree
 import           GHCJS.Foreign
 
 import           Alder.Diff
 import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript
+import           Alder.Unique
 
 type DOMNode = JSObj
 
-type Name = Int
+data NodeInfo = NodeInfo !Unique !Attributes DOMNode
 
 data MountState = MountState
-    { nextName    :: !Name
-    , model       :: [Node]
-    , handlersMap :: !(HashMap Name Handlers)
+    { nextUnique   :: !Unique
+    , model        :: TForest Node
+    , prevElements :: !(HashMap Unique NodeInfo)
+    , elements     :: !(HashMap Unique NodeInfo)
     }
 
-type Mount = IOState MountState
+newtype Mount a = Mount (IOState MountState a)
+    deriving (Functor, Applicative, Monad, MonadIO, MonadState MountState)
+
+instance MonadSupply Mount where
+    getUnique = state $ \s ->
+        let i = nextUnique s
+        in  (i, s { nextUnique = i + 1 })
+
+runMount :: Mount a -> IORef MountState -> IO a
+runMount (Mount m) = runIOState m
 
 ignore :: m () -> m ()
 ignore = id
+
+pointwiseM :: Monad m => (a -> b -> m Bool) -> [a] -> [b] -> m Bool
+pointwiseM p = go
+  where
+    go []     []     = return True
+    go []     _      = return False
+    go _      []     = return False
+    go (x:xs) (y:ys) = do r <- p x y
+                          if r then go xs ys else return False
 
 readMaybe :: (MonadPlus m, Read a) => String -> m a
 readMaybe s = case reads s of
@@ -42,15 +66,13 @@ readMaybe s = case reads s of
 mount :: IO (Html -> IO ())
 mount = do
     ref <- newIORef MountState
-        { nextName   = 0
-        , model      = []
-        , handlersMap = HashMap.empty
+        { nextUnique   = 0
+        , model        = []
+        , prevElements = HashMap.empty
+        , elements     = HashMap.empty
         }
-    listen $ \eventType ev -> runIOState (dispatch eventType ev) ref
-    document <- window .: "document"
-    body <- document .: "body"
-    removeChildren body
-    return $ \html -> runIOState (update html) ref
+    listen $ \eventType ev -> runMount (dispatch eventType ev) ref
+    return $ \html -> runMount (update html) ref
 
 listen :: (EventType -> JSObj -> IO ()) -> IO ()
 listen callback = do
@@ -73,94 +95,87 @@ useCapture = (`elem` [Focus, Blur, Submit])
 nameAttr :: Text
 nameAttr = "data-alder-id"
 
-register :: DOMNode -> Handlers -> Mount ()
-register n hs = do
-    name <- gets nextName
-    ignore $ apply n "setAttribute" (nameAttr, Text.pack $ show name)
-    modify $ \s -> s
-        { nextName    = name + 1
-        , handlersMap = HashMap.insert name hs (handlersMap s)
-        }
+getId :: DOMNode -> Mount (Maybe Unique)
+getId n = runMaybeT $ do
+    attr <- MaybeT $ call n "getAttribute" nameAttr
+    readMaybe (Text.unpack attr)
+
+register :: NodeInfo -> Mount ()
+register info@(NodeInfo i _ n) = do
+    ignore $ apply n "setAttribute" (nameAttr, Text.pack $ show i)
+    modify $ \s -> s { elements = HashMap.insert i info (elements s) }
 
 dispatch :: EventType -> JSObj -> Mount ()
 dispatch eventType ev = void . runMaybeT $ do
     target <- MaybeT $ ev .: "target"
-    attr   <- MaybeT $ call target "getAttribute" nameAttr
-    name   <- readMaybe (Text.unpack attr)
-    hs     <- MaybeT $ gets (HashMap.lookup name . handlersMap)
-    case HashMap.lookup eventType hs of
+    i <- MaybeT $ getId target
+    NodeInfo _ attrs _ <- MaybeT $ gets (HashMap.lookup i . elements)
+    case HashMap.lookup eventType (handlers attrs) of
         Nothing -> return ()
         Just h  -> liftIO $ h ev
 
 update :: Html -> Mount ()
 update html = do
     old <- gets model
-    let new = runHtml html
+    new <- reconcile (runHtml html) old
     document <- window .: "document"
-    body <- document .: "body"
-    modify $ \s -> s { model = new, handlersMap = HashMap.empty }
-    index <- liftIO $ createIndex body
-    updateChildren index body (diff old new)
+    body     <- document .: "body"
+    modify $ \s -> s
+        { model        = new
+        , prevElements = elements s
+        , elements     = HashMap.empty
+        }
+    updateChildren body new
 
-updateChildren :: HashMap Id DOMNode -> DOMNode -> Diff -> Mount ()
-updateChildren index n d0 = do
-    c <- n .: "firstChild"
-    go c d0
+updateChildren :: DOMNode -> TForest Node -> Mount ()
+updateChildren n xs = do
+    cs <- getChildren n
+    r <- pointwiseM matches cs xs
+    if r then
+            mapM_ (uncurry applyNode) (Prelude.zip cs xs)
+        else do
+            cs' <- mapM fetchNode xs
+            removeChildren n
+            appendChildren n cs'
   where
-    go c' (Match i a1 a2 d1 d2) = do
-        let c = case HashMap.lookup i index of
-                Nothing -> error $ "updateChildren: id " ++
-                                   show i ++ " not found"
-                Just r  -> r
+    matches c (Node (i :< Element{}) _) =
+        (== Just i) <$> getId c
 
-        r <- c .: "parentNode"
-        case r of
-            Nothing -> return ()
-            Just p  -> call p "removeChild" c
+    matches c (Node (_ :< Text{}) _) =
+        (== (3 :: Int)) <$> c .: "nodeType"
 
-        updateAttributes c a1 a2
-        updateChildren index c d1
-        ignore $ apply n "insertBefore" (c, c')
-        go c' d2
+fetchNode :: TTree Node -> Mount DOMNode
+fetchNode t@(Node (i :< Element{}) _) = do
+    m <- gets prevElements
+    case HashMap.lookup i m of
+        Nothing               -> create t
+        Just (NodeInfo _ _ c) -> do
+            p <- c .: "parentNode"
+            Foldable.mapM_ (\n -> ignore $ call n "removeChild" c)
+                (p :: Maybe DOMNode)
+            applyNode c t
+            return c
+fetchNode t = create t
 
-    go (Just c) (Relabel a1 a2 d1 d2) = do
-        c' <- c .: "nextSibling"
-        updateAttributes c a1 a2
-        updateChildren index c d1
-        go c' d2
+applyNode :: DOMNode -> TTree Node -> Mount ()
+applyNode n (Node (i :< Element _ a2) cs) = do
+    NodeInfo _ a1 _ <- fromMaybe
+        (error $ "applyNode: missing node " ++ show i) <$>
+        gets (HashMap.lookup i . prevElements)
+    setAttributes i n a1 a2
+    updateChildren n cs
+applyNode n (Node (_ :< Text t) _) =
+    writeProp n "nodeValue" t
 
-    go (Just c) (Revalue t d) = do
-        c' <- c .: "nextSibling"
-        writeProp c "nodeValue" t
-        go c' d
-
-    go c' (Add node d) = do
-        c <- create node
-        ignore $ apply n "insertBefore" (c, c')
-        go c' d
-
-    go (Just c) (Drop d) = do
-        c' <- c .: "nextSibling"
-        ignore $ call n "removeChild" c
-        go c' d
-
-    go (Just c) (Pass d) = do
-        c' <- c .: "nextSibling"
-        go c' d
-
-    go Nothing End = return ()
-
-    go _ d = error $ "updateChildren: invalid diff " ++ show d
-
-updateAttributes :: DOMNode -> Attributes -> Attributes -> Mount ()
-updateAttributes n a1 a2 = do
+setAttributes :: Unique -> DOMNode -> Attributes -> Attributes -> Mount ()
+setAttributes i n a1 a2 = do
+    register (NodeInfo i a2 n)
     writeProp n "id" (idName a2)
     writeProp n "className" (className a2)
     forM_ old $ \k ->
         ignore $ call n "removeAttribute" k
     forM_ new $ \(k, v) ->
         ignore $ apply n "setAttribute" (k, v)
-    register n (handlers a2)
   where
     idName    = fromMaybe "" . elementId
     className = Text.intercalate " " . Prelude.reverse . elementClass
@@ -176,45 +191,38 @@ updateAttributes n a1 a2 = do
         Just u | u == v -> False
         _               -> True
 
-create :: Node -> Mount DOMNode
-create (Element t a cs) = do
+create :: TTree Node -> Mount DOMNode
+create (Node (i :< Element t a) cs) = do
     document <- window .: "document"
     n <- call document "createElement" t
-    updateAttributes n defaultAttributes a
-    createChildren n cs
+    setAttributes i n defaultAttributes a
+    children <- mapM create cs
+    appendChildren n children
     return n
-create (Text t) = do
+create (Node (_ :< Text t) _) = do
     document <- window .: "document"
     call document "createTextNode" t
 
-createChildren :: DOMNode -> [Node] -> Mount ()
-createChildren n cs = do
-    children <- mapM create cs
-    forM_ children $ \child ->
-        ignore $ call n "appendChild" child
-
-createIndex :: DOMNode -> IO (HashMap Id DOMNode)
-createIndex n = do
-    list <- call n "getElementsByTagName" ("*" :: Text)
-    len  <- list .: "length"
-    go HashMap.empty (len - 1 :: Int) list
+getChildren :: MonadIO m => DOMNode -> m [DOMNode]
+getChildren n = do
+    c <- n .: "firstChild"
+    go c
   where
-    go m j list
-        | j < 0     = return m
-        | otherwise = do
-            e <- call list "item" j
-            attr <- call e "getAttribute" ("id" :: Text)
-            case attr of
-                Nothing -> go m (j - 1) list
-                Just i  -> go (HashMap.insert i e m) (j - 1) list
+    go Nothing  = return []
+    go (Just c) = do
+        c' <- c .: "nextSibling"
+        (c :) `liftM` go c'
 
-removeChildren :: DOMNode -> IO ()
+appendChildren :: MonadIO m => DOMNode -> [DOMNode] -> m ()
+appendChildren n = mapM_ (ignore . call n "appendChild")
+
+removeChildren :: MonadIO m => DOMNode -> m ()
 removeChildren n = go
   where
     go = do
-        r <- n .: "lastChild"
-        case r of
-            Nothing -> return ()
-            Just c  -> do
-                ignore $ call n "removeChild" (c :: DOMNode)
-                go
+        r <- n .: "firstChild"
+        Foldable.mapM_ removeChild (r :: Maybe DOMNode)
+
+    removeChild c = do
+        ignore $ call n "removeChild" c
+        go
