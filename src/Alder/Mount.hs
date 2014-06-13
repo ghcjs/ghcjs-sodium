@@ -18,7 +18,7 @@ import           Data.Text                 as Text
 import           Data.Tree
 import           GHCJS.Foreign
 
-import           Alder.Diff
+import           Alder.Reconcile
 import           Alder.Html.Internal
 import           Alder.IOState
 import           Alder.JavaScript

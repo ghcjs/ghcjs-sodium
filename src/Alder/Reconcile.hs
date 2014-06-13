@@ -1,5 +1,5 @@
 {-# LANGUAGE PatternGuards #-}
-module Alder.Diff
+module Alder.Reconcile
     ( TTree
     , TForest
     , reconcile
