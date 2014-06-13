@@ -144,8 +144,11 @@ updateChildren n xs = do
             removeChildren n
             appendChildren n cs'
   where
-    matches c (Node (i :< Element{}) _) =
-        (== Just i) <$> getId c
+    matches c (Node (i :< Element{}) _) = do
+        nodeType <- c .: "nodeType"
+        case nodeType :: Int of
+            1 -> (== Just i) <$> getId c
+            _ -> return False
 
     matches c (Node (_ :< Text{}) _) =
         (== (3 :: Int)) <$> c .: "nodeType"
