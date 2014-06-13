@@ -16,10 +16,10 @@ type Unique = Int
 class Monad m => MonadSupply m where
     getUnique :: m Unique
 
-data Tagged a = Tagged !Unique a
+data Tagged a = !Unique :< a
 
 tag :: MonadSupply m => a -> m (Tagged a)
-tag a = liftM (\i -> Tagged i a) getUnique
+tag a = liftM (:< a) getUnique
 
 untag :: Tagged a -> a
-untag (Tagged _ a) = a
+untag (_ :< a) = a

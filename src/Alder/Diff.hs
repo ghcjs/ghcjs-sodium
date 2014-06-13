@@ -1,11 +1,7 @@
 {-# LANGUAGE PatternGuards #-}
 module Alder.Diff
-    ( MonadSupply(..)
-    , Tagged(..)
-    , tag
-    , untag
-    , Frag
-    , TFrag
+    ( TTree
+    , TForest
     , reconcile
     ) where
 
@@ -18,8 +14,8 @@ import           Data.Tree
 import           Alder.Html.Internal
 import           Alder.Unique
 
-type Frag = Tree Node
-type TFrag = Tree (Tagged Node)
+type TTree a = Tree (Tagged a)
+type TForest a = Forest (Tagged a)
 
 cons :: Monad m => m a -> m [a] -> m [a]
 cons = liftM2 (:)
@@ -27,7 +23,7 @@ cons = liftM2 (:)
 subTrees :: Tree a -> [Tree a]
 subTrees n = n : concatMap subTrees (subForest n)
 
-reconcile :: MonadSupply m => [Frag] -> [TFrag] -> m [TFrag]
+reconcile :: MonadSupply m => Forest Node -> TForest Node -> m (TForest Node)
 reconcile new old = matchForest index new old
   where
     index = HashMap.fromList . mapMaybe withElementId $ concatMap subTrees old
@@ -37,7 +33,11 @@ reconcile new old = matchForest index new old
         _                                   -> Nothing
 
 matchForest
-    :: MonadSupply m => HashMap Id TFrag -> [Frag] -> [TFrag] -> m [TFrag]
+    :: MonadSupply m
+    => HashMap Id (TTree Node)
+    -> Forest Node
+    -> TForest Node
+    -> m (TForest Node)
 matchForest index new old = go new others
   where
     (keyed, others) = partitionEithers (mapMaybe splitKey old)
@@ -71,7 +71,11 @@ matchForest index new old = go new others
         = return []
 
 matchNode
-    :: MonadSupply m => HashMap Id TFrag -> Frag -> TFrag -> m TFrag
+    :: MonadSupply m
+    => HashMap Id (TTree Node)
+    -> Tree Node
+    -> TTree Node
+    -> m (TTree Node)
 matchNode index x y
     | Element t1 _ <- rootLabel x
     , Element t2 _ <- untag (rootLabel y)
@@ -85,9 +89,13 @@ matchNode index x y
     | otherwise = create x
 
 transfer
-    :: MonadSupply m => HashMap Id TFrag -> Frag -> TFrag -> m TFrag
-transfer index (Node a cs1) (Node (Tagged i _) cs2) =
-    Node (Tagged i a) `liftM` matchForest index cs1 cs2
+    :: MonadSupply m
+    => HashMap Id (TTree Node)
+    -> Tree Node
+    -> TTree Node
+    -> m (TTree Node)
+transfer index (Node a cs1) (Node (i :< _) cs2) =
+    Node (i :< a) `liftM` matchForest index cs1 cs2
 
-create :: MonadSupply m => Frag -> m TFrag
+create :: MonadSupply m => (Tree Node) -> m (TTree Node)
 create (Node a cs) = Node `liftM` tag a `ap` mapM create cs
