@@ -27,6 +27,7 @@ module Alder.Html.Internal
     , (!#)
     , (!.)
     , (!?.)
+    , key
       -- * Creating attributes
     , attribute
     , boolean
@@ -153,6 +154,9 @@ h !. v = h ! Attribute addClass
 
 (!?.) :: Attributable h => h -> (Bool, Text) -> h
 h !?. (p, v) = if p then h !. v else h
+
+key :: Int -> Attribute
+key i = Attribute $ \a -> a { elementKey = Just i }
 
 attribute :: Text -> Text -> Attribute
 attribute k v = Attribute $ \a ->

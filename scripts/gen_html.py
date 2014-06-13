@@ -100,9 +100,11 @@ events = {
 attributes.update(events)
 
 header = '''\
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-module Alder.Html.Attributes where
+{{-# LANGUAGE NoImplicitPrelude #-}}
+{{-# LANGUAGE OverloadedStrings #-}}
+module Alder.Html.Attributes
+    ( {0}
+    ) where
 
 import           Data.Text           (Text)
 
@@ -130,7 +132,13 @@ event_declaration = '''
 {1} = onEvent {0}
 '''
 
-outfile.write(header)
+exported = list(attributes)
+exported.append('key')
+exported.sort()
+
+export_list = '\n    , '.join(exported)
+
+outfile.write(header.format(export_list))
 
 for attr in sorted(list(attributes)):
     attr_ = attr.lower().replace('_', '')
