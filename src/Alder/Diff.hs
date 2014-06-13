@@ -1,116 +1,93 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternGuards     #-}
+{-# LANGUAGE PatternGuards #-}
 module Alder.Diff
-    ( Diff(..)
-    , diff
+    ( MonadSupply(..)
+    , Tagged(..)
+    , tag
+    , untag
+    , Frag
+    , TFrag
+    , reconcile
     ) where
 
-
-import           Control.Applicative
-import           Control.Monad.State
+import           Control.Monad
+import           Data.Either
 import           Data.HashMap.Strict as HashMap
 import           Data.Maybe
-import           Data.Text           (Text)
+import           Data.Tree
 
 import           Alder.Html.Internal
+import           Alder.Unique
 
-data Diff
-    = Match Id Attributes Attributes Diff Diff
-    | Relabel Attributes Attributes Diff Diff
-    | Revalue Text Diff
-    | Add Node Diff
-    | Drop Diff
-    | Pass Diff
-    | End
+type Frag = Tree Node
+type TFrag = Tree (Tagged Node)
 
-instance Show Diff where
-    showsPrec _ (Match i _ _ d1 d2)
-        = showString "Match "
-        . shows i
-        . showString " ("
-        . shows d1
-        . showString ") -> "
-        . shows d2
+cons :: Monad m => m a -> m [a] -> m [a]
+cons = liftM2 (:)
 
-    showsPrec _ (Relabel _ _ d1 d2)
-        = showString "Relabel ("
-        . shows d1
-        . showString ") -> "
-        . shows d2
+subTrees :: Tree a -> [Tree a]
+subTrees n = n : concatMap subTrees (subForest n)
 
-    showsPrec _ (Revalue t d)
-        = showString "Revalue "
-        . shows t
-        . showString " -> "
-        . shows d
-
-    showsPrec _ (Add _ d)
-        = showString "Add -> "
-        . shows d
-
-    showsPrec _ (Drop d)
-        = showString "Drop -> "
-        . shows d
-
-    showsPrec _ (Pass d)
-        = showString "Pass -> "
-        . shows d
-
-    showsPrec _ End
-        = showString "End"
-
-nodeId :: Node -> Maybe Id
-nodeId (Element _ a _) = elementId a
-nodeId _               = Nothing
-
-children :: Node -> [Node]
-children (Element _ _ cs) = cs
-children _                = []
-
-descendants :: Node -> [Node]
-descendants n = n : concatMap descendants (children n)
-
-diff :: [Node] -> [Node] -> Diff
-diff a b = evalState (diffM a b) index
+reconcile :: MonadSupply m => [Frag] -> [TFrag] -> m [TFrag]
+reconcile new old = matchForest index new old
   where
-    index = HashMap.fromList . mapMaybe withId $ concatMap descendants a
+    index = HashMap.fromList . mapMaybe withElementId $ concatMap subTrees old
 
-    withId e = (\i -> (i, e)) <$> nodeId e
+    withElementId t = case untag (rootLabel t) of
+        Element _ a | Just i <- elementId a -> Just (i, t)
+        _                                   -> Nothing
 
-diffM :: [Node] -> [Node] -> State (HashMap Id Node) Diff
-diffM a b = do
-    index <- get
-    go index a b
+matchForest
+    :: MonadSupply m => HashMap Id TFrag -> [Frag] -> [TFrag] -> m [TFrag]
+matchForest index new old = go new others
   where
-    go index (x:xs) ys
-        | Just i <- nodeId x
-        , not (HashMap.member i index)
-        = diffM xs ys
+    (keyed, others) = partitionEithers (mapMaybe splitKey old)
 
-    go _ (x:xs) (y:ys)
-        | Text t1 <- x
-        , Text t2 <- y
-        = (if t1 == t2 then Pass else Revalue t2) <$> diffM xs ys
+    keyIndex = HashMap.fromList keyed
 
-    go index (x:xs) (y:ys)
-        | Element t1 a1 cs1 <- x
-        , Element t2 a2 cs2 <- y
-        , elementId a1 == elementId a2
-        , t1 == t2
-        = do case elementId a2 of
-                 Nothing -> return ()
-                 Just i  -> put (HashMap.delete i index)
-             Relabel a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
+    splitKey t = case untag (rootLabel t) of
+        Element _ a | Just _ <- elementId a  -> Nothing
+                    | Just k <- elementKey a -> Just (Left (k, t))
+        _                                    -> Just (Right t)
 
-    go index xs (y:ys)
-        | Just i <- nodeId y
-        , Just x <- HashMap.lookup i index
-        , Element t1 a1 cs1 <- x
-        , Element t2 a2 cs2 <- y
-        , t1 == t2
-        = do put (HashMap.delete i index)
-             Match i a1 a2 <$> diffM cs1 cs2 <*> diffM xs ys
+    go (x:xs) ys
+        | Element _ a <- rootLabel x
+        , Just i <- elementId a
+        , Just y <- HashMap.lookup i index
+        = matchNode index x y `cons` go xs ys
 
-    go _ xs     (y:ys) = Add y <$> diffM xs ys
-    go _ (_:xs) ys     = Drop  <$> diffM xs ys
-    go _ []     []     = return End
+    go (x:xs) ys
+        | Element _ a <- rootLabel x
+        , Just k <- elementKey a
+        , Just y <- HashMap.lookup k keyIndex
+        = matchNode index x y `cons` go xs ys
+
+    go (x:xs) (y:ys)
+        = matchNode index x y `cons` go xs ys
+
+    go (x:xs) []
+        = create x `cons` go xs []
+
+    go [] _
+        = return []
+
+matchNode
+    :: MonadSupply m => HashMap Id TFrag -> Frag -> TFrag -> m TFrag
+matchNode index x y
+    | Element t1 _ <- rootLabel x
+    , Element t2 _ <- untag (rootLabel y)
+    , t1 == t2
+    = transfer index x y
+
+    | Text _ <- rootLabel x
+    , Text _ <- untag (rootLabel y)
+    = transfer index x y
+
+    | otherwise = create x
+
+transfer
+    :: MonadSupply m => HashMap Id TFrag -> Frag -> TFrag -> m TFrag
+transfer index (Node a cs1) (Node (Tagged i _) cs2) =
+    Node (Tagged i a) `liftM` matchForest index cs1 cs2
+
+create :: MonadSupply m => Frag -> m TFrag
+create (Node a cs) = Node `liftM` tag a `ap` mapM create cs

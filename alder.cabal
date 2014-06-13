@@ -53,3 +53,4 @@ library
     Alder.Html.Internal
     Alder.IOState
     Alder.JavaScript
+    Alder.Unique

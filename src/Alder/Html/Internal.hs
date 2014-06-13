@@ -39,6 +39,7 @@ import           Data.Hashable
 import           Data.HashMap.Strict as HashMap hiding ((!))
 import           Data.Monoid
 import           Data.Text           as Text
+import           Data.Tree
 import           Unsafe.Coerce
 
 import           Alder.JavaScript
@@ -46,7 +47,7 @@ import           Alder.JavaScript
 infixl 1 !, !?, !#, !., !?.
 
 data Node
-    = Element !Text Attributes [Node]
+    = Element !Text Attributes
     | Text !Text
 
 type Id = Text
@@ -55,6 +56,7 @@ type Handlers = HashMap EventType (JSObj -> IO ())
 
 data Attributes = Attributes
     { elementId       :: !(Maybe Id)
+    , elementKey      :: !(Maybe Int)
     , elementClass    :: ![Text]
     , otherAttributes :: !(HashMap Text Text)
     , handlers        :: !Handlers
@@ -63,6 +65,7 @@ data Attributes = Attributes
 defaultAttributes :: Attributes
 defaultAttributes = Attributes
     { elementId       = Nothing
+    , elementKey      = Nothing
     , elementClass    = []
     , otherAttributes = HashMap.empty
     , handlers        = HashMap.empty
@@ -70,7 +73,7 @@ defaultAttributes = Attributes
 
 type Html = HtmlM ()
 
-newtype HtmlM a = HtmlM (Attributes -> DList Node)
+newtype HtmlM a = HtmlM (Attributes -> DList (Tree Node))
     deriving (Monoid)
 
 instance Functor HtmlM where
@@ -88,17 +91,17 @@ instance Monad HtmlM where
 appendHtml :: HtmlM a -> HtmlM b -> HtmlM c
 appendHtml a b = unsafeCoerce a <> unsafeCoerce b
 
-runHtml :: Html -> [Node]
+runHtml :: Html -> Forest Node
 runHtml (HtmlM f) = DList.toList (f defaultAttributes)
 
 parent :: Text -> Html -> Html
-parent t h = HtmlM $ \a -> DList.singleton (Element t a (runHtml h))
+parent t h = HtmlM $ \a -> DList.singleton (Node (Element t a) (runHtml h))
 
 leaf :: Text -> Html
-leaf t = HtmlM $ \a -> DList.singleton (Element t a [])
+leaf t = HtmlM $ \a -> DList.singleton (Node (Element t a) [])
 
 text :: Text -> Html
-text t = HtmlM $ \_ -> DList.singleton (Text t)
+text t = HtmlM $ \_ -> DList.singleton (Node (Text t) [])
 
 addAttribute :: Attribute -> HtmlM a -> HtmlM a
 addAttribute (Attribute f) (HtmlM g) = HtmlM (g . f)
