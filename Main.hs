@@ -21,7 +21,8 @@ import           Alder.Sodium
 -- Data types
 
 data Todo = Todo
-    { _title     :: Text
+    { _todoId    :: Int
+    , _title     :: Text
     , _completed :: Bool
     }
 
@@ -81,7 +82,7 @@ header onChange onInput inputText =
                 ! A.value inputText
                 ! A.onInput (E.value >$< onInput)
                 ! A.onKeyDown onKeyDown
-                -- ! A.onblur (() >$ change)
+                ! A.onBlur (() >$ onChange)
   where
     onKeyDown = keep (isKey '\r') (() >$ onChange)
 
@@ -89,6 +90,7 @@ todoItem :: Input Command -> State -> Int -> Todo -> Html
 todoItem input s i todo =
     H.li !?. (todo ^. completed, "completed")
          !?. (stateEditIndex s == Just i, "editing")
+         ! A.key (todo ^. todoId)
          !? (not $ applyFilter (stateTodoFilter s) todo, A.hidden) $ do
         H.div !. "view" $ do
             H.input !. "toggle"
@@ -103,9 +105,9 @@ todoItem input s i todo =
                 ! A.value (stateEditText s)
                 ! A.onInput (Edit . E.value >$< input)
                 ! A.onKeyDown onKeyDown
-                -- ! A.onblur blur
+                ! A.onBlur onBlur
   where
-    -- blur    = EndEdit True >$ input
+    onBlur    = EndEdit True >$ input
     onKeyDown = keep (isKey '\r')   (EndEdit True  >$ input)
              <> keep (isKey '\ESC') (EndEdit False >$ input)
 
@@ -160,6 +162,8 @@ todoApp = mdo
 
     let submit = filterJust $ trim <$> inputText <@ enter
 
+    nextId <- accum 0 $ (+1) <$ submit
+
     inputText <- hold "" $
         change <>
         ("" <$ submit)
@@ -180,7 +184,7 @@ todoApp = mdo
         select _Edit commands
 
     todos <- accum Seq.empty $
-        ((\t -> (Todo t False <|))          <$> submit) <>
+        ((\i t -> (Todo i t False <|))      <$> nextId <@> submit) <>
         ((\i t -> ix i . title .~ t)        <$> editIndex <*> editText
             <@ filterE id (select _EndEdit commands)) <>
         ((\(i, c) -> ix i . completed .~ c) <$> select _Complete commands) <>
